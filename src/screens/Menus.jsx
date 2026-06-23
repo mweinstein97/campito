@@ -20,12 +20,15 @@ const SLOTS = [
 const GRUPOS = ['Todos los días', 'Jueves 10', 'Viernes 11', 'Sábado 12']
 
 export default function Menus() {
-  const { state, saveMenu, toggleCompra, showToast } = useApp()
+  const { state, saveMenu, toggleCompra, setCompraResp, showToast } = useApp()
   const menus = state?.menus || {}
   const compras = state?.compras || {}
+  const responsables = state?.responsables || {}
+  const users = state?.users || {}
   const [tab, setTab] = useState('menus')
   const [editSlot, setEditSlot] = useState(null)
   const [form, setForm] = useState({ plato: '', ingredientes: '' })
+  const [pickerItem, setPickerItem] = useState(null)
 
   function openEdit(slot) {
     const m = menus[slot.id] || { plato: '', ingredientes: [] }
@@ -122,24 +125,57 @@ export default function Menus() {
               <p className="text-[.83rem] font-semibold">Cargá ingredientes en los menús<br />para ver la lista acá</p>
             </div>
           ) : (
+            <>
             <div className="flex flex-col gap-1.5">
               {allIngredientes.map(({ label, count }) => {
                 const done = !!compras[label]
+                const resp = responsables[label]
+                const respUser = resp ? users[resp] : null
                 return (
-                  <button
-                    key={label}
-                    onClick={() => toggleCompra(label, !done)}
-                    className={`flex items-center gap-2.5 py-1.5 px-2 rounded-xl w-full text-left transition-all active:scale-[0.98] ${done ? 'bg-green-light' : 'bg-bg'}`}
-                  >
-                    <span className={`text-base leading-none ${done ? 'text-[#16A34A]' : 'text-text3'}`}>{done ? '✓' : '○'}</span>
-                    <span className={`flex-1 text-[.875rem] font-semibold transition-all ${done ? 'line-through text-text3' : ''}`}>{label}</span>
-                    {count > 1 && (
-                      <span className={`text-[.72rem] font-extrabold px-2 py-0.5 rounded-full ${done ? 'bg-green/20 text-[#16A34A]' : 'bg-orange-light text-orange'}`}>×{count}</span>
-                    )}
-                  </button>
+                  <div key={label} className={`flex items-center gap-2 py-1.5 px-2 rounded-xl transition-all ${done ? 'bg-green-light' : 'bg-bg'}`}>
+                    <button onClick={() => toggleCompra(label, !done)} className="flex items-center gap-2 flex-1 min-w-0 text-left active:scale-[0.98]">
+                      <span className={`text-base leading-none flex-shrink-0 ${done ? 'text-[#16A34A]' : 'text-text3'}`}>{done ? '✓' : '○'}</span>
+                      <span className={`flex-1 text-[.875rem] font-semibold transition-all ${done ? 'line-through text-text3' : ''}`}>{label}</span>
+                      {count > 1 && (
+                        <span className={`text-[.72rem] font-extrabold px-2 py-0.5 rounded-full flex-shrink-0 ${done ? 'bg-green/20 text-[#16A34A]' : 'bg-orange-light text-orange'}`}>×{count}</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setPickerItem(pickerItem === label ? null : label)}
+                      className={`flex-shrink-0 text-[.78rem] rounded-full w-7 h-7 flex items-center justify-center border-[1.5px] transition-all
+                        ${respUser ? 'border-orange bg-orange-light' : 'border-border bg-card text-text3'}`}
+                      title={resp || 'Asignar responsable'}
+                    >
+                      {respUser ? respUser.emoji : '+'}
+                    </button>
+                  </div>
                 )
               })}
             </div>
+            {pickerItem && (
+              <div className="mt-3 p-3 bg-bg rounded-xl border-[1.5px] border-border">
+                <div className="text-[.72rem] font-bold text-text2 uppercase tracking-wide mb-2">¿Quién lo compra? — <span className="text-orange">{pickerItem}</span></div>
+                <div className="flex flex-wrap gap-1.5">
+                  {responsables[pickerItem] && (
+                    <button
+                      onClick={() => { setCompraResp(pickerItem, ''); setPickerItem(null) }}
+                      className="text-[.72rem] font-bold px-2.5 py-1 rounded-full border-[1.5px] border-border text-text3"
+                    >Nadie</button>
+                  )}
+                  {Object.entries(users).map(([name, { emoji }]) => (
+                    <button
+                      key={name}
+                      onClick={() => { setCompraResp(pickerItem, name); setPickerItem(null) }}
+                      className={`flex items-center gap-1 text-[.75rem] font-bold px-2.5 py-1 rounded-full border-[1.5px] transition-all
+                        ${responsables[pickerItem] === name ? 'bg-orange text-white border-orange' : 'bg-card border-border text-text1'}`}
+                    >
+                      {emoji} {name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            </>
           )}
         </Card>
       )}
