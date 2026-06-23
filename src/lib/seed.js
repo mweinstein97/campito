@@ -13,7 +13,7 @@ export const VIAJEROS = [
   ['Alejo', '🌊'], ['Bruno', '🎸'], ['Iara', '🌺'], ['Ori', '🦋'],
   ['Martin', '⚡'], ['Val', '🌸'], ['Fede', '🎯'], ['Simón', '🦁'],
   ['Mila', '🌙'], ['Meli', '🍦'], ['Lucho', '🏔'], ['Juli', '🌵'],
-  ['Yae', '🦄'], ['Lara', '🌮'], ['Alex', '🚀'], ['Mic', '🎨'],
+  ['Yae', '🦄'], ['Lari', '🌮'], ['Alex', '🚀'], ['Mic', '🎨'],
   ['Chicho', '🦊'], ['Weri', '🎭'], ['Cami', '🍕'], ['Cata', '🐬'],
   ['Santi', '🎲'], ['Gime', '🎪'], ['Iña', '🐶'],
 ]
