@@ -19,12 +19,12 @@ const SLOTS = [
 const GRUPOS = ['Todos los días', 'Jueves 10', 'Viernes 11', 'Sábado 12']
 
 export default function Menus() {
-  const { state, saveMenu, showToast } = useApp()
+  const { state, saveMenu, toggleCompra, showToast } = useApp()
   const menus = state?.menus || {}
+  const compras = state?.compras || {}
   const [tab, setTab] = useState('menus')
   const [editSlot, setEditSlot] = useState(null)
   const [form, setForm] = useState({ plato: '', ingredientes: '' })
-  const [checked, setChecked] = useState({})
 
   function openEdit(slot) {
     const m = menus[slot.id] || { plato: '', ingredientes: [] }
@@ -123,11 +123,11 @@ export default function Menus() {
           ) : (
             <div className="flex flex-col gap-1.5">
               {allIngredientes.map(({ label, count }) => {
-                const done = !!checked[label]
+                const done = !!compras[label]
                 return (
                   <button
                     key={label}
-                    onClick={() => setChecked(c => ({ ...c, [label]: !c[label] }))}
+                    onClick={() => toggleCompra(label, !done)}
                     className={`flex items-center gap-2.5 py-1.5 px-2 rounded-xl w-full text-left transition-all active:scale-[0.98] ${done ? 'bg-green-light' : 'bg-bg'}`}
                   >
                     <span className={`text-base leading-none ${done ? 'text-[#16A34A]' : 'text-text3'}`}>{done ? '✓' : '○'}</span>
