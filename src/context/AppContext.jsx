@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, useEffect, useCallback, useRef }
 import { db, isOnline } from '../lib/firebase'
 import {
   collection, doc, setDoc, updateDoc, deleteDoc,
-  onSnapshot, getDocs, writeBatch,
+  onSnapshot, getDocs, writeBatch, arrayUnion, arrayRemove,
 } from 'firebase/firestore'
 import { buildSeedState, VIAJEROS, CHECKLIST_INICIAL } from '../lib/seed'
 
@@ -31,10 +31,13 @@ export function calcCountdown() {
 export function calcRanking(state) {
   const pts = {}
   Object.keys(state.users).forEach(n => pts[n] = 0)
-  Object.values(state.desafios).forEach(d => {
-    if (!d.correcta) return
-    Object.entries(d.respuestas || {}).forEach(([u, r]) => {
-      if (r === d.correcta) pts[u] = (pts[u] || 0) + 100
+  Object.values(state.desafios).forEach(day => {
+    const lista = day.lista || []
+    lista.forEach(d => {
+      if (!d.correcta) return
+      Object.entries(d.respuestas || {}).forEach(([u, r]) => {
+        if (r === d.correcta) pts[u] = (pts[u] || 0) + 100
+      })
     })
   })
   Object.entries(state.prode.correct || {}).forEach(([qid, corr]) => {
@@ -85,7 +88,6 @@ function reducer(state, action) {
   switch (action.type) {
     case 'LOAD':   return { ...action.payload }
     case 'MERGE':  return { ...state, [action.key]: action.data }
-    // Optimistic local updates (online: Firestore listener re-syncs after)
     case 'SET_USER':    return { ...state, users: { ...state.users, [action.name]: { emoji: action.emoji } } }
     case 'DEL_USER':  { const u = { ...state.users }; delete u[action.name]; return { ...state, users: u } }
     case 'SET_PREF':    return { ...state, pref: { ...state.pref, [action.name]: action.pref } }
@@ -97,21 +99,27 @@ function reducer(state, action) {
         : [...act.participantes, action.user]
       return { ...state, agenda: { ...state.agenda, [action.actId]: { ...act, participantes: parts } } }
     }
-    case 'REACT': {
-      const act = state.agenda[action.actId]
-      const reacs = { ...act.reacciones }
-      const userReacs = { ...act.userReacs }
-      const prev = userReacs[action.user]
-      if (prev === action.emoji) { reacs[prev]--; delete userReacs[action.user] }
-      else { if (prev && reacs[prev] > 0) reacs[prev]--; reacs[action.emoji] = (reacs[action.emoji] || 0) + 1; userReacs[action.user] = action.emoji }
-      return { ...state, agenda: { ...state.agenda, [action.actId]: { ...act, reacciones: reacs, userReacs } } }
+    case 'TAKE_ITEM': {
+      const it = state.check[action.id]
+      const portadores = it.portadores || []
+      return { ...state, check: { ...state.check, [action.id]: { ...it, portadores: [...portadores, action.user] } } }
     }
-    case 'TAKE_ITEM':   return { ...state, check: { ...state.check, [action.id]: { ...state.check[action.id], q: action.user } } }
+    case 'RELEASE_ITEM': {
+      const it = state.check[action.id]
+      return { ...state, check: { ...state.check, [action.id]: { ...it, portadores: (it.portadores || []).filter(p => p !== action.user) } } }
+    }
     case 'ADD_CHECK':   return { ...state, check: { ...state.check, [action.item.id]: action.item } }
     case 'ADD_GASTO':   return { ...state, gastos: { ...state.gastos, [action.item.id]: action.item } }
+    case 'EDIT_GASTO':  return { ...state, gastos: { ...state.gastos, [action.item.id]: action.item } }
+    case 'DEL_GASTO':  { const g = { ...state.gastos }; delete g[action.id]; return { ...state, gastos: g } }
     case 'RESP_DSF': {
-      const d = state.desafios[action.fecha]
-      return { ...state, desafios: { ...state.desafios, [action.fecha]: { ...d, respuestas: { ...d.respuestas, [action.user]: action.resp } } } }
+      const day = state.desafios[action.fecha] || { lista: [] }
+      const newLista = (day.lista || []).map(d =>
+        d.id === action.dsfId
+          ? { ...d, respuestas: { ...(d.respuestas || {}), [action.user]: action.resp } }
+          : d
+      )
+      return { ...state, desafios: { ...state.desafios, [action.fecha]: { lista: newLista } } }
     }
     case 'SAVE_DESAFIO': return { ...state, desafios: { ...state.desafios, [action.fecha]: action.desafio } }
     case 'ADD_PRODE_Q':  return { ...state, prode: { ...state.prode, pregs: [...state.prode.pregs, action.q] } }
@@ -132,6 +140,8 @@ export function AppProvider({ children }) {
   const [currentUser, setCurrentUserState] = useReducer((_, u) => u, null)
   const [toast, dispatchToast]      = useReducer((_, msg) => msg, null)
   const toastTimer                  = useRef(null)
+  const stateRef                    = useRef(state)
+  useEffect(() => { stateRef.current = state }, [state])
 
   const persist = useCallback(s => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)) } catch (_) {}
@@ -145,7 +155,6 @@ export function AppProvider({ children }) {
 
   // ── init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    // Restore session user
     const savedUser = sessionStorage.getItem(USER_KEY)
     if (savedUser) { try { setCurrentUserState(JSON.parse(savedUser)) } catch (_) {} }
 
@@ -155,7 +164,6 @@ export function AppProvider({ children }) {
       return setupListeners(dispatch)
     }
 
-    // Offline fallback: localStorage → seed
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) { try { dispatch({ type: 'LOAD', payload: JSON.parse(raw) }); return } catch (_) {} }
     const seed = buildSeedState()
@@ -163,7 +171,6 @@ export function AppProvider({ children }) {
     persist(seed)
   }, []) // eslint-disable-line
 
-  // Persist to localStorage when offline
   useEffect(() => {
     if (state && !isOnline()) persist(state)
   }, [state, persist])
@@ -188,6 +195,13 @@ export function AppProvider({ children }) {
       dispatch({ type: 'DEL_USER', name })
       if (db) await deleteDoc(doc(db, 'users', name))
     },
+    async changeEmoji(name, emoji) {
+      dispatch({ type: 'SET_USER', name, emoji })
+      const user = { name, emoji }
+      setCurrentUserState(user)
+      sessionStorage.setItem(USER_KEY, JSON.stringify(user))
+      if (db) await updateDoc(doc(db, 'users', name), { emoji })
+    },
 
     async savePref(name, pref) {
       dispatch({ type: 'SET_PREF', name, pref })
@@ -204,7 +218,7 @@ export function AppProvider({ children }) {
     async togglePart(actId, user) {
       dispatch({ type: 'TOGGLE_PART', actId, user })
       if (db) {
-        const act = state.agenda[actId]
+        const act = stateRef.current.agenda[actId]
         const joined = act.participantes.includes(user)
         await updateDoc(doc(db, 'agenda', actId), {
           participantes: joined
@@ -213,27 +227,18 @@ export function AppProvider({ children }) {
         })
       }
     },
-    async react(actId, emoji, user) {
-      dispatch({ type: 'REACT', actId, emoji, user })
-      if (db) {
-        // Recalculate after optimistic update
-        const act = state.agenda[actId]
-        const prev = act.userReacs?.[user]
-        const reacs = { ...act.reacciones }
-        const userReacs = { ...act.userReacs }
-        if (prev === emoji) { reacs[prev] = Math.max(0, (reacs[prev] || 1) - 1); delete userReacs[user] }
-        else { if (prev && reacs[prev] > 0) reacs[prev]--; reacs[emoji] = (reacs[emoji] || 0) + 1; userReacs[user] = emoji }
-        await updateDoc(doc(db, 'agenda', actId), { reacciones: reacs, userReacs })
-      }
-    },
 
     async takeItem(id, user) {
       dispatch({ type: 'TAKE_ITEM', id, user })
-      if (db) await updateDoc(doc(db, 'checklist', id), { q: user })
+      if (db) await updateDoc(doc(db, 'checklist', id), { portadores: arrayUnion(user) })
+    },
+    async releaseItem(id, user) {
+      dispatch({ type: 'RELEASE_ITEM', id, user })
+      if (db) await updateDoc(doc(db, 'checklist', id), { portadores: arrayRemove(user) })
     },
     async addCheckItem(item) {
       dispatch({ type: 'ADD_CHECK', item })
-      if (db) await setDoc(doc(db, 'checklist', item.id), { item: item.item, q: null })
+      if (db) await setDoc(doc(db, 'checklist', item.id), { item: item.item, portadores: [] })
     },
 
     async addGasto(item) {
@@ -243,20 +248,53 @@ export function AppProvider({ children }) {
         await setDoc(doc(db, 'gastos', id), data)
       }
     },
-
-    async respDesafio(fecha, user, resp) {
-      dispatch({ type: 'RESP_DSF', fecha, user, resp })
-      if (db) await updateDoc(doc(db, 'desafios', fecha), { [`respuestas.${user}`]: resp })
+    async updateGasto(item) {
+      dispatch({ type: 'EDIT_GASTO', item })
+      if (db) {
+        const { id, ...data } = item
+        await setDoc(doc(db, 'gastos', id), data)
+      }
     },
-    async saveDesafio(fecha, desafio) {
-      dispatch({ type: 'SAVE_DESAFIO', fecha, desafio })
-      if (db) await setDoc(doc(db, 'desafios', fecha), desafio)
+    async deleteGasto(id) {
+      dispatch({ type: 'DEL_GASTO', id })
+      if (db) await deleteDoc(doc(db, 'gastos', id))
+    },
+
+    async respDesafio(fecha, dsfId, user, resp) {
+      dispatch({ type: 'RESP_DSF', fecha, dsfId, user, resp })
+      if (db) {
+        const day = stateRef.current.desafios[fecha] || { lista: [] }
+        const newLista = (day.lista || []).map(d =>
+          d.id === dsfId
+            ? { ...d, respuestas: { ...(d.respuestas || {}), [user]: resp } }
+            : d
+        )
+        await setDoc(doc(db, 'desafios', fecha), { lista: newLista })
+      }
+    },
+    async addDesafio(fecha, dsfItem) {
+      const current = stateRef.current.desafios[fecha] || { lista: [] }
+      const newDoc = { lista: [...(current.lista || []), dsfItem] }
+      dispatch({ type: 'SAVE_DESAFIO', fecha, desafio: newDoc })
+      if (db) await setDoc(doc(db, 'desafios', fecha), newDoc)
+    },
+    async updateDesafio(fecha, dsfItem) {
+      const current = stateRef.current.desafios[fecha] || { lista: [] }
+      const newDoc = { lista: (current.lista || []).map(d => d.id === dsfItem.id ? dsfItem : d) }
+      dispatch({ type: 'SAVE_DESAFIO', fecha, desafio: newDoc })
+      if (db) await setDoc(doc(db, 'desafios', fecha), newDoc)
+    },
+    async deleteDesafio(fecha, dsfId) {
+      const current = stateRef.current.desafios[fecha] || { lista: [] }
+      const newDoc = { lista: (current.lista || []).filter(d => d.id !== dsfId) }
+      dispatch({ type: 'SAVE_DESAFIO', fecha, desafio: newDoc })
+      if (db) await setDoc(doc(db, 'desafios', fecha), newDoc)
     },
 
     async addProdeQ(q) {
       dispatch({ type: 'ADD_PRODE_Q', q })
       if (db) await updateDoc(doc(db, 'prode', 'estado'), {
-        pregs: [...(state.prode.pregs || []), q],
+        pregs: [...(stateRef.current.prode.pregs || []), q],
       })
     },
     respProde(user, qid, resp) {
@@ -283,14 +321,14 @@ export const useApp = () => useContext(AppCtx)
 // ─── Firestore first-run seed ────────────────────────────────────────────────
 async function seedFirestoreIfEmpty() {
   const snap = await getDocs(collection(db, 'users'))
-  if (!snap.empty) return  // ya inicializado
+  if (!snap.empty) return
 
   const batch = writeBatch(db)
   VIAJEROS.forEach(([name, emoji]) => {
     batch.set(doc(db, 'users', name), { emoji })
   })
   CHECKLIST_INICIAL.forEach((item, i) => {
-    batch.set(doc(db, 'checklist', `c${i + 1}`), { item, q: null })
+    batch.set(doc(db, 'checklist', `c${i + 1}`), { item, portadores: [] })
   })
   batch.set(doc(db, 'prode', 'estado'), { pregs: [], resp: {}, correct: {}, closed: false })
   await batch.commit()
@@ -320,7 +358,14 @@ function setupListeners(dispatch) {
 
   unsubs.push(onSnapshot(collection(db, 'checklist'), snap => {
     const check = {}
-    snap.forEach(d => check[d.id] = { id: d.id, ...d.data() })
+    snap.forEach(d => {
+      const data = d.data()
+      // backward compat: old `q` field → portadores array
+      const portadores = Array.isArray(data.portadores)
+        ? data.portadores
+        : (data.q ? [data.q] : [])
+      check[d.id] = { id: d.id, item: data.item, portadores }
+    })
     dispatch({ type: 'MERGE', key: 'check', data: check })
   }))
 
@@ -332,16 +377,24 @@ function setupListeners(dispatch) {
 
   unsubs.push(onSnapshot(collection(db, 'desafios'), snap => {
     const desafios = {}
-    snap.forEach(d => desafios[d.id] = d.data())
+    snap.forEach(d => {
+      const data = d.data()
+      if (data.lista) {
+        desafios[d.id] = data
+      } else {
+        // backward compat: old single-desafio structure
+        desafios[d.id] = {
+          lista: [{ id: 'd0', pregunta: data.pregunta, opciones: data.opciones || [], correcta: data.correcta || null, respuestas: data.respuestas || {} }],
+        }
+      }
+    })
     dispatch({ type: 'MERGE', key: 'desafios', data: desafios })
   }))
 
-  // Prode: single document
   unsubs.push(onSnapshot(doc(db, 'prode', 'estado'), snap => {
     if (snap.exists()) {
       dispatch({ type: 'MERGE', key: 'prode', data: snap.data() })
     } else {
-      // Create the doc if it doesn't exist yet
       setDoc(doc(db, 'prode', 'estado'), { pregs: [], resp: {}, correct: {}, closed: false })
     }
   }))

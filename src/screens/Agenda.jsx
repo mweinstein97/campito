@@ -4,10 +4,9 @@ import Card from '../components/Card'
 import Modal from '../components/Modal'
 
 const DIAS = ['Mié 9','Jue 10','Vie 11','Sáb 12']
-const REAC_EMOJIS = ['🔥','👏','😂']
 
 export default function Agenda({ onBadge }) {
-  const { state, currentUser, addAgenda, togglePart, react, showToast } = useApp()
+  const { state, currentUser, addAgenda, togglePart, showToast } = useApp()
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ nombre:'', dia: DIAS[0], hora:'', descripcion:'' })
 
@@ -20,7 +19,6 @@ export default function Agenda({ onBadge }) {
       id, nombre: form.nombre, dia: form.dia,
       hora: form.hora || '?', descripcion: form.descripcion,
       creador: currentUser.name, participantes: [currentUser.name],
-      reacciones: { '🔥':0,'👏':0,'😂':0 }, userReacs: {},
     })
     setForm({ nombre:'', dia: DIAS[0], hora:'', descripcion:'' })
     setModalOpen(false)
@@ -45,7 +43,7 @@ export default function Agenda({ onBadge }) {
           <div className="text-4xl mb-2">📅</div>
           <p className="text-[.875rem] font-semibold">No hay actividades aún.<br />¡Creá la primera!</p>
         </div>
-      ) : acts.map(a => <ActCard key={a.id} act={a} currentUser={currentUser} state={state} onToggle={togglePart} onReact={react} />)}
+      ) : acts.map(a => <ActCard key={a.id} act={a} currentUser={currentUser} onToggle={togglePart} />)}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <h2 className="font-display font-black text-[1.15rem] mb-3.5">Nueva actividad</h2>
@@ -73,48 +71,34 @@ export default function Agenda({ onBadge }) {
   )
 }
 
-function ActCard({ act, currentUser, state, onToggle, onReact }) {
+function ActCard({ act, currentUser, onToggle }) {
   const joined = act.participantes.includes(currentUser?.name)
-  const ems = act.participantes.map(p => state.users[p]?.emoji || '🙂').slice(0, 5).join(' ')
 
   return (
     <Card>
       <div className="flex items-start justify-between gap-2">
-        <div>
+        <div className="flex-1 min-w-0">
           <div className="font-display text-[.975rem] font-extrabold">{act.nombre}</div>
           <div className="text-[.75rem] text-text2 mt-0.5 font-semibold">📅 {act.dia} · ⏰ {act.hora} · por {act.creador}</div>
           {act.descripcion && <div className="text-[.78rem] text-text2 mt-0.5">{act.descripcion}</div>}
         </div>
-        <span className="inline-flex items-center text-[.68rem] font-extrabold px-2 py-0.5 rounded-md bg-purple-light text-purple font-display whitespace-nowrap">
-          {act.participantes.length} 👥
-        </span>
-      </div>
-      <div className="flex items-center justify-between mt-3">
-        <div className="text-[.875rem]">{ems}</div>
         <button
           onClick={() => onToggle(act.id, currentUser.name)}
-          className={`rounded-[10px] px-3.5 py-1.5 text-[.78rem] font-extrabold transition-all active:scale-95
-            ${joined ? 'bg-green-light text-[#065E45]' : 'bg-purple-light text-purple'}`}
+          className={`rounded-[10px] px-3.5 py-1.5 text-[.78rem] font-extrabold transition-all active:scale-95 whitespace-nowrap flex-shrink-0
+            ${joined ? 'bg-green-light text-[#065E45]' : 'bg-orange-light text-orange'}`}
         >
           {joined ? '✓ Voy' : '+ Me sumo'}
         </button>
       </div>
-      <div className="flex gap-1.5 mt-2">
-        {REAC_EMOJIS.map(e => {
-          const count = act.reacciones?.[e] || 0
-          const on = act.userReacs?.[currentUser?.name] === e
-          return (
-            <button
-              key={e}
-              onClick={() => onReact(act.id, e, currentUser.name)}
-              className={`border-[1.5px] rounded-full px-2.5 py-1 text-[.82rem] font-bold text-text2 transition-all
-                ${on ? 'bg-orange-light border-orange' : 'bg-bg border-border'}`}
-            >
-              {e} {count}
-            </button>
-          )
-        })}
-      </div>
+      {act.participantes.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1">
+          {act.participantes.map(p => (
+            <span key={p} className="bg-bg border border-border text-text2 text-[.72rem] font-semibold px-2 py-0.5 rounded-full">
+              {p}
+            </span>
+          ))}
+        </div>
+      )}
     </Card>
   )
 }

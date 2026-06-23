@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react'
 import { useApp, calcCountdown, calcRanking, todayKey } from '../context/AppContext'
 import Card from '../components/Card'
 
-const MEDALS = ['🥇','🥈','🥉','4️⃣','5️⃣']
-
 export default function Inicio() {
   const { state, currentUser, respDesafio, showToast } = useApp()
   const [cd, setCd] = useState(calcCountdown())
@@ -17,21 +15,20 @@ export default function Inicio() {
 
   const total = Object.keys(state.users).length
   const compl = Object.keys(state.pref).length
-  const pct = total ? Math.round(compl / total * 100) : 0
-  const hoy = todayKey()
-  const dsf = state.desafios[hoy]
-  const rnk = calcRanking(state).slice(0, 5)
+  const pct   = total ? Math.round(compl / total * 100) : 0
+  const hoy   = todayKey()
+  const hoyDsf = state.desafios[hoy]
+  const lista  = hoyDsf?.lista || []
+  const rnk    = calcRanking(state)
 
-  async function handleRespDsf(op) {
-    await respDesafio(hoy, currentUser.name, op)
+  async function handleResp(dsfId, op) {
+    await respDesafio(hoy, dsfId, currentUser.name, op)
     showToast('Respuesta guardada ⚡')
   }
 
-  const myResp = dsf?.respuestas?.[currentUser?.name]
-
   return (
     <div className="flex flex-col">
-      {/* Countdown card */}
+      {/* Countdown */}
       <div className="bg-orange rounded-[20px] mx-4 mt-4 mb-3 px-6 py-5 text-white">
         <div className="text-[.72rem] font-bold opacity-85 tracking-wider uppercase">📍 Campito · 9–12 de julio</div>
         {cd.gone ? (
@@ -52,16 +49,24 @@ export default function Inicio() {
         <div className="text-[.72rem] opacity-90 mt-1 font-semibold">{compl}/{total} completaron preferencias</div>
       </div>
 
-      {/* Desafío */}
-      <Card className="bg-yellow-light border-yellow">
-        <div className="inline-flex items-center gap-1 bg-yellow text-[#7A5B00] text-[.68rem] font-extrabold px-2.5 py-0.5 rounded-[10px] mb-2 font-display">
-          ⚡ Desafío del día
-        </div>
-        {dsf ? (
-          <>
+      {/* Desafíos del día */}
+      {lista.length === 0 ? (
+        <Card className="bg-yellow-light border-yellow">
+          <div className="inline-flex items-center gap-1 bg-yellow text-[#7A5B00] text-[.68rem] font-extrabold px-2.5 py-0.5 rounded-[10px] mb-2 font-display">
+            ⚡ Desafío del día
+          </div>
+          <div className="text-center py-3 text-text3 font-semibold text-[.875rem]">Sin desafío hoy 🌙</div>
+        </Card>
+      ) : lista.map((dsf, idx) => {
+        const myResp = dsf.respuestas?.[currentUser?.name]
+        return (
+          <Card key={dsf.id} className="bg-yellow-light border-yellow">
+            <div className="inline-flex items-center gap-1 bg-yellow text-[#7A5B00] text-[.68rem] font-extrabold px-2.5 py-0.5 rounded-[10px] mb-2 font-display">
+              ⚡ Desafío {lista.length > 1 ? idx + 1 : 'del día'}
+            </div>
             <div className="text-[.975rem] font-bold mb-3">{dsf.pregunta}</div>
             <div className="flex flex-col gap-1.5">
-              {dsf.opciones.map(o => {
+              {(dsf.opciones || []).map(o => {
                 let cls = 'bg-card border-border text-text1'
                 if (myResp) {
                   if (dsf.correcta) {
@@ -73,7 +78,7 @@ export default function Inicio() {
                   <button
                     key={o}
                     disabled={!!myResp}
-                    onClick={() => handleRespDsf(o)}
+                    onClick={() => handleResp(dsf.id, o)}
                     className={`border-[1.5px] rounded-xl px-3.5 py-2.5 text-left text-[.875rem] font-semibold transition-all disabled:cursor-default ${cls}`}
                   >
                     {o}
@@ -88,11 +93,9 @@ export default function Inicio() {
                   ? <div className="flex items-center gap-2 mt-2 px-2 py-1.5 bg-[#FFE0E0] rounded-xl text-[.8rem] font-bold text-[#8B0000]">❌ Esta no era. Correcta: {dsf.correcta}</div>
                   : <div className="flex items-center gap-2 mt-2 px-2 py-1.5 bg-yellow/20 rounded-xl text-[.83rem] font-bold text-[#7A5B00]">⏳ Respuesta guardada</div>
             )}
-          </>
-        ) : (
-          <div className="text-center py-3 text-text3 font-semibold text-[.875rem]">Sin desafío hoy 🌙</div>
-        )}
-      </Card>
+          </Card>
+        )
+      })}
 
       {/* Ranking */}
       <Card>
@@ -100,13 +103,13 @@ export default function Inicio() {
           <span className="font-display text-[.975rem] font-extrabold">Ranking</span>
           <span className="inline-flex items-center text-[.68rem] font-extrabold px-2 py-0.5 rounded-md bg-orange-light text-orange font-display">{total} viajeros</span>
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5">
           {rnk.length === 0 ? (
             <p className="text-[.83rem] text-text3 font-semibold">Todavía no hay puntos</p>
           ) : rnk.map(([n, p], i) => (
-            <div key={n} className="flex items-center gap-2.5 py-1.5">
-              <span className={`font-display font-extrabold w-6 text-center ${i < 3 ? 'text-xl' : 'text-[.82rem]'}`}>{MEDALS[i]}</span>
-              <span className="text-xl">{state.users[n]?.emoji || '🙂'}</span>
+            <div key={n} className={`flex items-center gap-2.5 py-1.5 px-2 rounded-xl ${n === currentUser?.name ? 'bg-orange-light' : ''}`}>
+              <span className="font-display font-extrabold text-[.85rem] w-6 text-center text-text3">{i + 1}</span>
+              <span className="text-lg">{state.users[n]?.emoji || '🙂'}</span>
               <span className="flex-1 text-[.875rem] font-bold">{n}</span>
               <span className="text-[.82rem] font-extrabold text-orange">{p} pts</span>
             </div>

@@ -4,35 +4,63 @@ import Card from '../components/Card'
 import Modal from '../components/Modal'
 
 export default function Gastos({ onBadge }) {
-  const { state, currentUser, addGasto, showToast } = useApp()
+  const { state, currentUser, addGasto, updateGasto, deleteGasto, showToast } = useApp()
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState({ desc:'', monto:'', pagador:'' })
   const [parts, setParts] = useState({})
 
-  const gastos = Object.values(state?.gastos || {})
+  const gastos = Object.values(state?.gastos || {}).sort((a, b) => (b.id || '').localeCompare(a.id || ''))
   const deudas = calcDeudas(state?.gastos || {})
-  const myBal = calcMyBalance(state?.gastos || {}, currentUser?.name)
-  const total = gastos.reduce((a, g) => a + g.monto, 0)
-  const users = Object.keys(state?.users || {})
+  const myBal  = calcMyBalance(state?.gastos || {}, currentUser?.name)
+  const total  = gastos.reduce((a, g) => a + g.monto, 0)
+  const users  = Object.keys(state?.users || {})
 
-  function openModal() {
+  function openNew() {
     const allSelected = {}
     users.forEach(u => allSelected[u] = true)
     setParts(allSelected)
     setForm({ desc:'', monto:'', pagador: currentUser.name })
+    setEditingId(null)
     setModalOpen(true)
   }
 
-  async function handleCreate() {
+  function openEdit(g) {
+    const sel = {}
+    g.participantes.forEach(u => sel[u] = true)
+    setParts(sel)
+    setForm({ desc: g.desc, monto: String(g.monto), pagador: g.pagador })
+    setEditingId(g.id)
+    setModalOpen(true)
+  }
+
+  function toggleAll() {
+    const allOn = users.every(u => parts[u])
+    const next = {}
+    users.forEach(u => next[u] = !allOn)
+    setParts(next)
+  }
+
+  async function handleSave() {
     const selectedParts = users.filter(u => parts[u])
     if (!form.desc.trim() || !form.monto || !selectedParts.length) {
       showToast('Completá todos los campos'); return
     }
-    const id = 'g' + Date.now()
-    await addGasto({ id, desc: form.desc, monto: parseFloat(form.monto), pagador: form.pagador, participantes: selectedParts })
+    const item = { id: editingId || ('g' + Date.now()), desc: form.desc, monto: parseFloat(form.monto), pagador: form.pagador, participantes: selectedParts }
+    if (editingId) {
+      await updateGasto(item)
+      showToast('Gasto actualizado ✏️')
+    } else {
+      await addGasto(item)
+      showToast('Gasto registrado 💸')
+      onBadge?.()
+    }
     setModalOpen(false)
-    showToast('Gasto registrado 💸')
-    onBadge?.()
+  }
+
+  async function handleDelete(id) {
+    await deleteGasto(id)
+    showToast('Gasto eliminado')
   }
 
   return (
@@ -56,7 +84,7 @@ export default function Gastos({ onBadge }) {
           ? <div className="text-[.83rem] text-text3 font-semibold py-1">¡Nadie debe nada! 🎉</div>
           : deudas.map((d, i) => {
             const isFrom = d.from === currentUser?.name
-            const isTo = d.to === currentUser?.name
+            const isTo   = d.to === currentUser?.name
             return (
               <div key={i} className={`flex items-center gap-1.5 py-2 border-b border-border last:border-b-0 rounded-xl px-1
                 ${isFrom ? 'bg-orange-light' : isTo ? 'bg-green-light' : ''}`}>
@@ -73,23 +101,27 @@ export default function Gastos({ onBadge }) {
       <Card>
         <div className="flex items-center justify-between mb-3">
           <span className="font-display text-[.975rem] font-extrabold">Gastos · ${total.toLocaleString('es-AR')}</span>
-          <button onClick={openModal} className="bg-orange text-white rounded-xl px-3.5 py-1.5 text-[.78rem] font-bold active:opacity-85">+ Nuevo</button>
+          <button onClick={openNew} className="bg-orange text-white rounded-xl px-3.5 py-1.5 text-[.78rem] font-bold active:opacity-85">+ Nuevo</button>
         </div>
         {gastos.length === 0
           ? <div className="text-[.83rem] text-text3 font-semibold">Sin gastos aún</div>
           : gastos.map(g => (
             <div key={g.id} className="flex items-center gap-2.5 py-2 border-b border-border last:border-b-0">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="text-[.875rem] font-bold">{g.desc}</div>
-                <div className="text-[.72rem] text-text2 font-semibold">Pagó {state.users[g.pagador]?.emoji || '🙂'} {g.pagador} · {g.participantes.length} personas</div>
+                <div className="text-[.72rem] text-text2 font-semibold">
+                  Pagó {state.users[g.pagador]?.emoji || '🙂'} {g.pagador} · {g.participantes.length} personas
+                </div>
               </div>
               <div className="font-display text-[.975rem] font-extrabold">${g.monto.toLocaleString('es-AR')}</div>
+              <button onClick={() => openEdit(g)} className="text-orange text-[.8rem] p-1">✏️</button>
+              <button onClick={() => handleDelete(g.id)} className="text-text3 text-[.8rem] p-1">🗑️</button>
             </div>
           ))}
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <h2 className="font-display font-black text-[1.15rem] mb-3.5">Nuevo gasto</h2>
+        <h2 className="font-display font-black text-[1.15rem] mb-3.5">{editingId ? 'Editar gasto' : 'Nuevo gasto'}</h2>
         <Field label="Descripción">
           <input className={fi} value={form.desc} onChange={e => setForm(f => ({...f, desc: e.target.value}))} placeholder="Súper, asado, combustible..." />
         </Field>
@@ -102,7 +134,13 @@ export default function Gastos({ onBadge }) {
           </select>
         </Field>
         <Field label="Participantes">
-          <div className="flex flex-wrap gap-1.5 mt-1">
+          <button
+            onClick={toggleAll}
+            className="mb-2 text-[.75rem] font-bold text-orange underline"
+          >
+            {users.every(u => parts[u]) ? 'Deseleccionar todos' : 'Seleccionar todos'}
+          </button>
+          <div className="flex flex-wrap gap-1.5">
             {users.map(n => (
               <button
                 key={n}
@@ -115,8 +153,8 @@ export default function Gastos({ onBadge }) {
             ))}
           </div>
         </Field>
-        <button onClick={handleCreate} className="w-full bg-orange text-white rounded-xl py-3 font-bold text-[.9rem] mt-2 active:opacity-85">
-          Guardar gasto
+        <button onClick={handleSave} className="w-full bg-orange text-white rounded-xl py-3 font-bold text-[.9rem] mt-2 active:opacity-85">
+          {editingId ? 'Guardar cambios' : 'Guardar gasto'}
         </button>
       </Modal>
     </div>

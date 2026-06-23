@@ -6,7 +6,7 @@ const ADMIN_PWD = 'campito2025'
 export default function Admin({ onClose }) {
   const [authed, setAuthed] = useState(false)
   const [pwd, setPwd] = useState('')
-  const { state, currentUser, showToast, deleteUser, saveDesafio, addProdeQ, closeProde } = useApp()
+  const { state, currentUser, showToast, deleteUser, addDesafio, updateDesafio, deleteDesafio, addProdeQ, closeProde } = useApp()
 
   function handleLogin() {
     if (pwd === ADMIN_PWD) setAuthed(true)
@@ -31,27 +31,58 @@ export default function Admin({ onClose }) {
     )
   }
 
-  return <AdminPanel state={state} currentUser={currentUser} showToast={showToast} deleteUser={deleteUser} saveDesafio={saveDesafio} addProdeQ={addProdeQ} closeProde={closeProde} onClose={onClose} />
+  return <AdminPanel state={state} currentUser={currentUser} showToast={showToast} deleteUser={deleteUser}
+    addDesafio={addDesafio} updateDesafio={updateDesafio} deleteDesafio={deleteDesafio}
+    addProdeQ={addProdeQ} closeProde={closeProde} onClose={onClose} />
 }
 
-function AdminPanel({ state, currentUser, showToast, deleteUser, saveDesafio, addProdeQ, closeProde, onClose }) {
-  const hoy = todayKey()
-  const dsf = state.desafios[hoy] || {}
-  const [dsfForm, setDsfForm] = useState({ pregunta: dsf.pregunta||'', opciones: (dsf.opciones||[]).join('|'), correcta: dsf.correcta||'' })
-  const [prodeForm, setProdeForm] = useState({ pregunta:'', opciones:'' })
-  const [corrects, setCorrects] = useState({})
+function AdminPanel({ state, currentUser, showToast, deleteUser, addDesafio, updateDesafio, deleteDesafio, addProdeQ, closeProde, onClose }) {
+  const hoy    = todayKey()
+  const hoyDsf = state.desafios[hoy] || { lista: [] }
+  const lista  = hoyDsf.lista || []
 
-  async function handleSaveDsf() {
-    const opts = dsfForm.opciones.split('|').map(o => o.trim()).filter(Boolean)
-    if (!dsfForm.pregunta.trim() || !opts.length) { showToast('Completá pregunta y opciones'); return }
-    await saveDesafio(hoy, {
-      pregunta: dsfForm.pregunta,
+  const [addForm, setAddForm] = useState({ pregunta:'', opciones:'', correcta:'' })
+  const [editId, setEditId]   = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [prodeForm, setProdeForm] = useState({ pregunta:'', opciones:'' })
+  const [corrects, setCorrects]   = useState({})
+
+  async function handleAddDsf() {
+    const opts = addForm.opciones.split('|').map(o => o.trim()).filter(Boolean)
+    if (!addForm.pregunta.trim() || !opts.length) { showToast('Completá pregunta y opciones'); return }
+    await addDesafio(hoy, {
+      id: 'd' + Date.now(),
+      pregunta: addForm.pregunta,
       opciones: opts,
-      correcta: dsfForm.correcta || null,
-      respuestas: dsf.respuestas || {},
+      correcta: addForm.correcta.trim() || null,
+      respuestas: {},
     })
-    showToast('Desafío guardado ⚡')
-    onClose()
+    setAddForm({ pregunta:'', opciones:'', correcta:'' })
+    showToast('Desafío agregado ⚡')
+  }
+
+  function startEdit(dsf) {
+    setEditId(dsf.id)
+    setEditForm({ pregunta: dsf.pregunta, opciones: dsf.opciones.join('|'), correcta: dsf.correcta || '' })
+  }
+
+  async function handleUpdateDsf() {
+    const opts = editForm.opciones.split('|').map(o => o.trim()).filter(Boolean)
+    if (!editForm.pregunta.trim() || !opts.length) { showToast('Completá pregunta y opciones'); return }
+    const existing = lista.find(d => d.id === editId)
+    await updateDesafio(hoy, {
+      ...existing,
+      pregunta: editForm.pregunta,
+      opciones: opts,
+      correcta: editForm.correcta.trim() || null,
+    })
+    setEditId(null)
+    showToast('Desafío actualizado ✅')
+  }
+
+  async function handleDeleteDsf(id) {
+    await deleteDesafio(hoy, id)
+    showToast('Desafío eliminado')
   }
 
   async function handleAddProde() {
@@ -72,18 +103,59 @@ function AdminPanel({ state, currentUser, showToast, deleteUser, saveDesafio, ad
     <>
       <h2 className="font-display font-black text-[1.15rem] mb-4">Panel admin 🔧</h2>
 
-      {/* Desafío */}
-      <Section title="Desafío del día">
-        <Field label="Pregunta">
-          <input className={fi} value={dsfForm.pregunta} onChange={e => setDsfForm(f => ({...f, pregunta: e.target.value}))} />
-        </Field>
-        <Field label="Opciones (separar con |)">
-          <input className={fi} value={dsfForm.opciones} onChange={e => setDsfForm(f => ({...f, opciones: e.target.value}))} />
-        </Field>
-        <Field label="Respuesta correcta">
-          <input className={fi} value={dsfForm.correcta} onChange={e => setDsfForm(f => ({...f, correcta: e.target.value}))} />
-        </Field>
-        <Btn2 onClick={handleSaveDsf}>Guardar desafío</Btn2>
+      {/* Desafíos del día */}
+      <Section title="Desafíos del día">
+        {/* Lista existente */}
+        {lista.map((dsf, idx) => (
+          <div key={dsf.id} className="mb-3 border-[1.5px] border-border rounded-xl p-3 bg-bg">
+            {editId === dsf.id ? (
+              <>
+                <Field label="Pregunta">
+                  <input className={fi} value={editForm.pregunta} onChange={e => setEditForm(f => ({...f, pregunta: e.target.value}))} />
+                </Field>
+                <Field label="Opciones (separar con |)">
+                  <input className={fi} value={editForm.opciones} onChange={e => setEditForm(f => ({...f, opciones: e.target.value}))} />
+                </Field>
+                <Field label="Respuesta correcta">
+                  <input className={fi} value={editForm.correcta} onChange={e => setEditForm(f => ({...f, correcta: e.target.value}))} />
+                </Field>
+                <div className="flex gap-2">
+                  <button onClick={() => setEditId(null)} className="flex-1 border-[1.5px] border-border text-text2 rounded-xl py-2 text-[.83rem] font-bold">Cancelar</button>
+                  <button onClick={handleUpdateDsf} className="flex-1 bg-orange text-white rounded-xl py-2 text-[.83rem] font-bold">Guardar</button>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-start gap-2">
+                <div className="flex-1">
+                  <div className="text-[.82rem] font-bold text-text2 mb-0.5">Desafío {idx + 1}</div>
+                  <div className="text-[.85rem] font-semibold text-text1">{dsf.pregunta}</div>
+                  <div className="text-[.72rem] text-text3 mt-0.5">{(dsf.opciones || []).join(' · ')}</div>
+                  {dsf.correcta && <div className="text-[.72rem] text-[#065E45] font-bold mt-0.5">✅ Correcta: {dsf.correcta}</div>}
+                  <div className="text-[.68rem] text-text3 mt-0.5">{Object.keys(dsf.respuestas || {}).length} respuestas</div>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => startEdit(dsf)} className="text-orange text-[.8rem] p-1">✏️</button>
+                  <button onClick={() => handleDeleteDsf(dsf.id)} className="text-text3 text-[.8rem] p-1">🗑️</button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* Agregar nuevo */}
+        <div className="border-[1.5px] border-dashed border-border rounded-xl p-3">
+          <div className="text-[.75rem] font-bold text-text2 uppercase tracking-wider mb-2">+ Agregar desafío</div>
+          <Field label="Pregunta">
+            <input className={fi} value={addForm.pregunta} onChange={e => setAddForm(f => ({...f, pregunta: e.target.value}))} placeholder="¿Cuántas cervezas...?" />
+          </Field>
+          <Field label="Opciones (separar con |)">
+            <input className={fi} value={addForm.opciones} onChange={e => setAddForm(f => ({...f, opciones: e.target.value}))} placeholder="5|10|15|20" />
+          </Field>
+          <Field label="Respuesta correcta (opcional)">
+            <input className={fi} value={addForm.correcta} onChange={e => setAddForm(f => ({...f, correcta: e.target.value}))} placeholder="10" />
+          </Field>
+          <Btn2 onClick={handleAddDsf}>Agregar desafío</Btn2>
+        </div>
       </Section>
 
       <div className="h-px bg-border my-4" />
