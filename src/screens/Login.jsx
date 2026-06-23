@@ -76,18 +76,20 @@ export default function Login() {
       {/* Emoji picker */}
       {showPicker && (
         <div className="bg-card rounded-card border-[1.5px] border-border p-4 w-full">
-          <h3 className="font-display font-extrabold text-[1.05rem] mb-3">Elegí tu emoji</h3>
-          <div className="grid grid-cols-6 gap-1.5 mb-3">
-            {EMOJIS.map(e => (
-              <button
-                key={e}
-                onClick={() => setSelEmoji(e)}
-                className={`rounded-[10px] p-1.5 text-xl text-center border-[1.5px] transition-all
-                  ${e === selEmoji ? 'bg-orange-light border-orange' : 'bg-bg border-border'}`}
-              >
-                {e}
-              </button>
-            ))}
+          <h3 className="font-display font-extrabold text-[1.05rem] mb-2">Elegí tu emoji</h3>
+          <div className="max-h-44 overflow-y-auto no-scrollbar mb-3">
+            <div className="grid grid-cols-8 gap-1">
+              {EMOJIS.map(e => (
+                <button
+                  key={e}
+                  onClick={() => setSelEmoji(e)}
+                  className={`rounded-[10px] p-1 text-xl text-center border-[1.5px] transition-all
+                    ${e === selEmoji ? 'bg-orange-light border-orange' : 'bg-bg border-border'}`}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
           </div>
           <button
             onClick={handleConfirm}
