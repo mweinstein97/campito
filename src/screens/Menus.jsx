@@ -7,7 +7,7 @@ const SLOTS = [
   { id: 'desayuno', label: 'Desayunos', icon: '☕', grupo: 'Todos los días' },
   { id: 'merienda', label: 'Meriendas', icon: '🍪', grupo: 'Todos los días' },
   { id: 'postre',   label: 'Postres',   icon: '🍰', grupo: 'Todos los días' },
-  { id: 'snacks',   label: 'Snacks',    icon: '🥜', grupo: 'Todos los días' },
+  { id: 'snacks',   label: 'Extras',    icon: '🥜', grupo: 'Todos los días' },
   { id: 'alm-jue',  label: 'Almuerzo',  icon: '🍽️', grupo: 'Jueves 10' },
   { id: 'cen-jue',  label: 'Cena',      icon: '🌙', grupo: 'Jueves 10' },
   { id: 'alm-vie',  label: 'Almuerzo',  icon: '🍽️', grupo: 'Viernes 11' },
