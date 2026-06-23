@@ -41,20 +41,18 @@ export default function Menus() {
     setEditSlot(null)
   }
 
-  // Shopping list: all ingredientes across all slots (deduplicated by case-insensitive match)
-  const allIngredientes = []
-  const seen = new Set()
+  // Shopping list: count occurrences of each ingredient across all slots
+  const ingCount = {}
   SLOTS.forEach(s => {
     const m = menus[s.id]
     if (!m) return
     ;(m.ingredientes || []).forEach(ing => {
       const key = ing.toLowerCase().trim()
-      if (!seen.has(key)) {
-        seen.add(key)
-        allIngredientes.push(ing)
-      }
+      if (!ingCount[key]) ingCount[key] = { label: ing, count: 0 }
+      ingCount[key].count++
     })
   })
+  const allIngredientes = Object.values(ingCount).sort((a, b) => a.label.localeCompare(b.label))
 
   return (
     <div className="flex flex-col">
@@ -123,10 +121,13 @@ export default function Menus() {
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
-              {allIngredientes.map((ing, i) => (
-                <div key={i} className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl bg-bg">
+              {allIngredientes.map(({ label, count }) => (
+                <div key={label} className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl bg-bg">
                   <span className="text-orange font-black text-[.7rem]">○</span>
-                  <span className="text-[.875rem] font-semibold">{ing}</span>
+                  <span className="flex-1 text-[.875rem] font-semibold">{label}</span>
+                  {count > 1 && (
+                    <span className="text-[.72rem] font-extrabold text-orange bg-orange-light px-2 py-0.5 rounded-full">×{count}</span>
+                  )}
                 </div>
               ))}
             </div>
