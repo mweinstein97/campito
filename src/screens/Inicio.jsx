@@ -53,7 +53,7 @@ export default function Inicio() {
       {lista.length === 0 ? (
         <Card className="bg-yellow-light border-yellow">
           <div className="inline-flex items-center gap-1 bg-yellow text-[#0C4A6E] text-[.68rem] font-extrabold px-2.5 py-0.5 rounded-[10px] mb-2 font-display">
-            ⚡ Desafío del día
+            🏁 Desafío del día
           </div>
           <div className="text-center py-3 text-text3 font-semibold text-[.875rem]">Sin desafío hoy 🌙</div>
         </Card>
@@ -62,7 +62,7 @@ export default function Inicio() {
         return (
           <Card key={dsf.id} className="bg-yellow-light border-yellow">
             <div className="inline-flex items-center gap-1 bg-yellow text-[#0C4A6E] text-[.68rem] font-extrabold px-2.5 py-0.5 rounded-[10px] mb-2 font-display">
-              ⚡ Desafío {lista.length > 1 ? idx + 1 : 'del día'}
+              🏁 Desafío {lista.length > 1 ? idx + 1 : 'del día'}
             </div>
             <div className="text-[.975rem] font-bold mb-3">{dsf.pregunta}</div>
             <div className="flex flex-col gap-1.5">

@@ -10,7 +10,18 @@ export default function Agenda({ onBadge }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ nombre:'', dia: DIAS[0], hora:'', descripcion:'' })
 
-  const acts = Object.values(state?.agenda || {}).sort((a, b) => a.dia > b.dia ? 1 : -1)
+  const allActs = Object.values(state?.agenda || {})
+  const grouped = DIAS.map(dia => ({
+    dia,
+    acts: allActs
+      .filter(a => a.dia === dia)
+      .sort((a, b) => {
+        if (!a.hora || a.hora === '?') return 1
+        if (!b.hora || b.hora === '?') return -1
+        return a.hora.localeCompare(b.hora)
+      }),
+  })).filter(g => g.acts.length > 0)
+  const totalActs = allActs.length
 
   async function handleCreate() {
     if (!form.nombre.trim()) { showToast('Escribí el nombre'); return }
@@ -29,7 +40,7 @@ export default function Agenda({ onBadge }) {
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between px-4 py-2">
-        <span className="text-[.83rem] text-text2 font-semibold">{acts.length} actividades</span>
+        <span className="text-[.83rem] text-text2 font-semibold">{totalActs} actividades</span>
         <button
           onClick={() => setModalOpen(true)}
           className="bg-orange text-white rounded-xl px-3.5 py-1.5 text-[.78rem] font-bold active:opacity-85"
@@ -38,12 +49,19 @@ export default function Agenda({ onBadge }) {
         </button>
       </div>
 
-      {acts.length === 0 ? (
+      {totalActs === 0 ? (
         <div className="text-center py-10 text-text3">
           <div className="text-4xl mb-2">📅</div>
           <p className="text-[.875rem] font-semibold">No hay actividades aún.<br />¡Creá la primera!</p>
         </div>
-      ) : acts.map(a => <ActCard key={a.id} act={a} currentUser={currentUser} onToggle={togglePart} />)}
+      ) : grouped.map(({ dia, acts }) => (
+        <div key={dia}>
+          <div className="px-4 pt-3 pb-1">
+            <span className="text-[.72rem] font-extrabold text-text3 uppercase tracking-widest font-display">{dia}</span>
+          </div>
+          {acts.map(a => <ActCard key={a.id} act={a} currentUser={currentUser} onToggle={togglePart} />)}
+        </div>
+      ))}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <h2 className="font-display font-black text-[1.15rem] mb-3.5">Nueva actividad</h2>

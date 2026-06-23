@@ -1,9 +1,10 @@
 const TABS = [
-  { id: 'inicio', icon: '🏠', label: 'Inicio' },
-  { id: 'agenda', icon: '📅', label: 'Agenda' },
-  { id: 'preparativos', icon: '🎒', label: 'Preparativos' },
-  { id: 'gastos', icon: '💸', label: 'Gastos' },
-  { id: 'juegos', icon: '🎮', label: 'Juegos' },
+  { id: 'inicio',        icon: '🏠', label: 'Inicio' },
+  { id: 'agenda',        icon: '📅', label: 'Agenda' },
+  { id: 'preparativos',  icon: '🎒', label: 'Bolsos' },
+  { id: 'menus',         icon: '🍽️', label: 'Menús' },
+  { id: 'gastos',        icon: '💸', label: 'Gastos' },
+  { id: 'juegos',        icon: '🎮', label: 'Juegos' },
 ]
 
 export default function Nav({ current, onChange, badges = {} }) {

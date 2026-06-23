@@ -128,6 +128,7 @@ function reducer(state, action) {
       return { ...state, prode: { ...state.prode, resp: rs } }
     }
     case 'CLOSE_PRODE': return { ...state, prode: { ...state.prode, closed: true, correct: action.correct } }
+    case 'SET_MENU': return { ...state, menus: { ...state.menus, [action.id]: action.data } }
     default: return state
   }
 }
@@ -316,6 +317,11 @@ export function AppProvider({ children }) {
     async saveProdeResps(user, resps) {
       if (db) await updateDoc(doc(db, 'prode', 'estado'), { [`resp.${user}`]: resps })
     },
+    async saveMenu(id, data) {
+      dispatch({ type: 'SET_MENU', id, data })
+      if (db) await setDoc(doc(db, 'menus', id), data)
+    },
+
     async closeProde(correct) {
       dispatch({ type: 'CLOSE_PRODE', correct })
       if (db) await updateDoc(doc(db, 'prode', 'estado'), { correct, closed: true })
@@ -404,6 +410,12 @@ function setupListeners(dispatch) {
     dispatch({ type: 'MERGE', key: 'desafios', data: desafios })
   }))
 
+  unsubs.push(onSnapshot(collection(db, 'menus'), snap => {
+    const menus = {}
+    snap.forEach(d => menus[d.id] = d.data())
+    dispatch({ type: 'MERGE', key: 'menus', data: menus })
+  }))
+
   unsubs.push(onSnapshot(doc(db, 'prode', 'estado'), snap => {
     if (snap.exists()) {
       dispatch({ type: 'MERGE', key: 'prode', data: snap.data() })
@@ -417,7 +429,7 @@ function setupListeners(dispatch) {
 
 function emptyState() {
   return {
-    users: {}, agenda: {}, pref: {}, check: {}, gastos: {}, desafios: {},
+    users: {}, agenda: {}, pref: {}, check: {}, gastos: {}, desafios: {}, menus: {},
     prode: { pregs: [], resp: {}, correct: {}, closed: false },
   }
 }

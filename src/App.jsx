@@ -6,6 +6,7 @@ import Agenda from './screens/Agenda'
 import Preparativos from './screens/Preparativos'
 import Gastos from './screens/Gastos'
 import Juegos from './screens/Juegos'
+import Menus from './screens/Menus'
 import Admin from './screens/Admin'
 import Nav from './components/Nav'
 import Header from './components/Header'
@@ -47,6 +48,7 @@ function Shell() {
         {tab === 'agenda'       && <Agenda onBadge={() => addBadge('agenda')} />}
         {tab === 'preparativos' && <Preparativos />}
         {tab === 'gastos'       && <Gastos onBadge={() => addBadge('gastos')} />}
+        {tab === 'menus'        && <Menus />}
         {tab === 'juegos'       && <Juegos />}
       </div>
       <Nav current={tab} onChange={handleTabChange} badges={badges} />

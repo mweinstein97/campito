@@ -27,6 +27,7 @@ export default function Admin({ onClose }) {
           placeholder="Contraseña..."
         />
         <button onClick={handleLogin} className="w-full bg-orange text-white rounded-xl py-3 font-bold mt-3 active:opacity-85">Entrar</button>
+        <button onClick={onClose} className="w-full border-[1.5px] border-border text-text2 rounded-xl py-2.5 font-bold mt-2 active:opacity-85 text-[.875rem]">Cancelar</button>
       </>
     )
   }
@@ -101,7 +102,10 @@ function AdminPanel({ state, currentUser, showToast, deleteUser, addDesafio, upd
 
   return (
     <>
-      <h2 className="font-display font-black text-[1.15rem] mb-4">Panel admin 🔧</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display font-black text-[1.15rem]">Panel admin 🔧</h2>
+        <button onClick={onClose} className="text-text3 text-[.8rem] font-bold border-[1.5px] border-border rounded-full px-3 py-1 active:bg-bg">Cerrar ✕</button>
+      </div>
 
       {/* Desafíos del día */}
       <Section title="Desafíos del día">
@@ -166,7 +170,13 @@ function AdminPanel({ state, currentUser, showToast, deleteUser, addDesafio, upd
           <input className={fi} value={prodeForm.pregunta} onChange={e => setProdeForm(f => ({...f, pregunta: e.target.value}))} placeholder="¿Quién...?" />
         </Field>
         <Field label="Opciones (separar con |)">
-          <input className={fi} value={prodeForm.opciones} onChange={e => setProdeForm(f => ({...f, opciones: e.target.value}))} placeholder="Juan|Sofi|Caro|Nico" />
+          <div className="flex gap-2 items-start">
+            <input className={fi} value={prodeForm.opciones} onChange={e => setProdeForm(f => ({...f, opciones: e.target.value}))} placeholder="Juan|Sofi|Caro|Nico" />
+            <button
+              onClick={() => setProdeForm(f => ({...f, opciones: Object.keys(state.users).join('|')}))}
+              className="whitespace-nowrap text-[.72rem] font-bold text-orange border-[1.5px] border-orange rounded-xl px-2.5 py-2.5 active:bg-orange-light"
+            >Todos</button>
+          </div>
         </Field>
         <Btn2 onClick={handleAddProde}>Agregar</Btn2>
       </Section>
