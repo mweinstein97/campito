@@ -1,7 +1,9 @@
 // Datos de demo cuando no hay Supabase configurado
 export const EMOJIS = ['🌊','🏄','🎸','🌮','🐶','🦋','🌺','⚡','🎯','🦁','🌙','🎪','🍕','🚀','🎨','🌵','🦊','🎭','🍦','🏔','🐬','🌸','🦄','🎲']
 
-const VIAJEROS = [
+export const CHECKLIST_INICIAL = ['Hielo', 'Parlante', 'Botiquín', 'Pelota', 'Juegos de mesa', 'Bajante']
+
+export const VIAJEROS = [
   ['Alejo', '🌊'], ['Bruno', '🎸'], ['Iara', '🌺'], ['Ori', '🦋'],
   ['Martin', '⚡'], ['Val', '🌸'], ['Fede', '🎯'], ['Simón', '🦁'],
   ['Mila', '🌙'], ['Meli', '🍦'], ['Lucho', '🏔'], ['Juli', '🌵'],
