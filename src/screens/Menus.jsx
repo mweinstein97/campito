@@ -24,6 +24,7 @@ export default function Menus() {
   const [tab, setTab] = useState('menus')
   const [editSlot, setEditSlot] = useState(null)
   const [form, setForm] = useState({ plato: '', ingredientes: '' })
+  const [checked, setChecked] = useState({})
 
   function openEdit(slot) {
     const m = menus[slot.id] || { plato: '', ingredientes: [] }
@@ -121,15 +122,22 @@ export default function Menus() {
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
-              {allIngredientes.map(({ label, count }) => (
-                <div key={label} className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl bg-bg">
-                  <span className="text-orange font-black text-[.7rem]">○</span>
-                  <span className="flex-1 text-[.875rem] font-semibold">{label}</span>
-                  {count > 1 && (
-                    <span className="text-[.72rem] font-extrabold text-orange bg-orange-light px-2 py-0.5 rounded-full">×{count}</span>
-                  )}
-                </div>
-              ))}
+              {allIngredientes.map(({ label, count }) => {
+                const done = !!checked[label]
+                return (
+                  <button
+                    key={label}
+                    onClick={() => setChecked(c => ({ ...c, [label]: !c[label] }))}
+                    className={`flex items-center gap-2.5 py-1.5 px-2 rounded-xl w-full text-left transition-all active:scale-[0.98] ${done ? 'bg-green-light' : 'bg-bg'}`}
+                  >
+                    <span className={`text-base leading-none ${done ? 'text-[#16A34A]' : 'text-text3'}`}>{done ? '✓' : '○'}</span>
+                    <span className={`flex-1 text-[.875rem] font-semibold transition-all ${done ? 'line-through text-text3' : ''}`}>{label}</span>
+                    {count > 1 && (
+                      <span className={`text-[.72rem] font-extrabold px-2 py-0.5 rounded-full ${done ? 'bg-green/20 text-[#16A34A]' : 'bg-orange-light text-orange'}`}>×{count}</span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           )}
         </Card>
