@@ -202,6 +202,19 @@ export function AppProvider({ children }) {
       sessionStorage.setItem(USER_KEY, JSON.stringify(user))
       if (db) await updateDoc(doc(db, 'users', name), { emoji })
     },
+    async changeName(oldName, newName, emoji) {
+      if (!newName.trim() || newName === oldName) return
+      // Create doc with new name, delete old
+      dispatch({ type: 'SET_USER', name: newName, emoji })
+      dispatch({ type: 'DEL_USER', name: oldName })
+      const user = { name: newName, emoji }
+      setCurrentUserState(user)
+      sessionStorage.setItem(USER_KEY, JSON.stringify(user))
+      if (db) {
+        await setDoc(doc(db, 'users', newName), { emoji })
+        await deleteDoc(doc(db, 'users', oldName))
+      }
+    },
 
     async savePref(name, pref) {
       dispatch({ type: 'SET_PREF', name, pref })
