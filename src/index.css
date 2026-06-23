@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --nav: 64px;
+  --safe: env(safe-area-inset-bottom, 0px);
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  background-color: #FFF8F0;
+}
+
+/* Hide scrollbar but keep scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Smooth scroll */
+.scroll-area {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--nav) + 12px + var(--safe));
+}
+
+/* Nav safe area */
+.nav-bar {
+  padding-bottom: var(--safe);
+}
+
+/* Toast */
+.toast-enter { opacity: 0; transform: translateX(-50%) translateY(20px); }
+.toast-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Modal slide up */
+.modal-sheet {
+  transform: translateY(60px);
+  transition: transform 0.22s ease;
+}
+.modal-sheet.open {
+  transform: translateY(0);
+}
+
+/* PWA tap highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent double-tap zoom on buttons */
+button { touch-action: manipulation; }
