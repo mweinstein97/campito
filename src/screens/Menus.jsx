@@ -132,49 +132,49 @@ export default function Menus() {
                 const resp = responsables[label]
                 const respUser = resp ? users[resp] : null
                 return (
-                  <div key={label} className={`flex items-center gap-2 py-1.5 px-2 rounded-xl transition-all ${done ? 'bg-green-light' : 'bg-bg'}`}>
-                    <button onClick={() => toggleCompra(label, !done)} className="flex items-center gap-2 flex-1 min-w-0 text-left active:scale-[0.98]">
-                      <span className={`text-base leading-none flex-shrink-0 ${done ? 'text-[#16A34A]' : 'text-text3'}`}>{done ? '✓' : '○'}</span>
-                      <span className={`flex-1 text-[.875rem] font-semibold transition-all ${done ? 'line-through text-text3' : ''}`}>{label}</span>
-                      {count > 1 && (
-                        <span className={`text-[.72rem] font-extrabold px-2 py-0.5 rounded-full flex-shrink-0 ${done ? 'bg-green/20 text-[#16A34A]' : 'bg-orange-light text-orange'}`}>×{count}</span>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => setPickerItem(pickerItem === label ? null : label)}
-                      className={`flex-shrink-0 text-[.78rem] rounded-full w-7 h-7 flex items-center justify-center border-[1.5px] transition-all
-                        ${respUser ? 'border-orange bg-orange-light' : 'border-border bg-card text-text3'}`}
-                      title={resp || 'Asignar responsable'}
-                    >
-                      {respUser ? respUser.emoji : '+'}
-                    </button>
+                  <div key={label} className="flex flex-col gap-1">
+                    <div className={`flex items-center gap-2 py-1.5 px-2 rounded-xl transition-all ${done ? 'bg-green-light' : 'bg-bg'}`}>
+                      <button onClick={() => toggleCompra(label, !done)} className="flex items-center gap-2 flex-1 min-w-0 text-left active:scale-[0.98]">
+                        <span className={`text-base leading-none flex-shrink-0 ${done ? 'text-[#16A34A]' : 'text-text3'}`}>{done ? '✓' : '○'}</span>
+                        <span className={`flex-1 text-[.875rem] font-semibold transition-all ${done ? 'line-through text-text3' : ''}`}>{label}</span>
+                        {count > 1 && (
+                          <span className={`text-[.72rem] font-extrabold px-2 py-0.5 rounded-full flex-shrink-0 ${done ? 'bg-green/20 text-[#16A34A]' : 'bg-orange-light text-orange'}`}>×{count}</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setPickerItem(pickerItem === label ? null : label)}
+                        className={`flex-shrink-0 text-[.78rem] rounded-full w-7 h-7 flex items-center justify-center border-[1.5px] transition-all
+                          ${respUser ? 'border-orange bg-orange-light' : 'border-border bg-card text-text3'}`}
+                      >
+                        {respUser ? respUser.emoji : '+'}
+                      </button>
+                    </div>
+                    {pickerItem === label && (
+                      <div className="px-2 pb-1 pt-0.5">
+                        <div className="flex flex-wrap gap-1.5">
+                          {resp && (
+                            <button
+                              onClick={() => { setCompraResp(label, ''); setPickerItem(null) }}
+                              className="text-[.72rem] font-bold px-2.5 py-1 rounded-full border-[1.5px] border-border text-text3"
+                            >Nadie</button>
+                          )}
+                          {Object.entries(users).map(([name, { emoji }]) => (
+                            <button
+                              key={name}
+                              onClick={() => { setCompraResp(label, name); setPickerItem(null) }}
+                              className={`flex items-center gap-1 text-[.75rem] font-bold px-2.5 py-1 rounded-full border-[1.5px] transition-all
+                                ${resp === name ? 'bg-orange text-white border-orange' : 'bg-card border-border text-text1'}`}
+                            >
+                              {emoji} {name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )
               })}
             </div>
-            {pickerItem && (
-              <div className="mt-3 p-3 bg-bg rounded-xl border-[1.5px] border-border">
-                <div className="text-[.72rem] font-bold text-text2 uppercase tracking-wide mb-2">¿Quién lo compra? — <span className="text-orange">{pickerItem}</span></div>
-                <div className="flex flex-wrap gap-1.5">
-                  {responsables[pickerItem] && (
-                    <button
-                      onClick={() => { setCompraResp(pickerItem, ''); setPickerItem(null) }}
-                      className="text-[.72rem] font-bold px-2.5 py-1 rounded-full border-[1.5px] border-border text-text3"
-                    >Nadie</button>
-                  )}
-                  {Object.entries(users).map(([name, { emoji }]) => (
-                    <button
-                      key={name}
-                      onClick={() => { setCompraResp(pickerItem, name); setPickerItem(null) }}
-                      className={`flex items-center gap-1 text-[.75rem] font-bold px-2.5 py-1 rounded-full border-[1.5px] transition-all
-                        ${responsables[pickerItem] === name ? 'bg-orange text-white border-orange' : 'bg-card border-border text-text1'}`}
-                    >
-                      {emoji} {name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
             </>
           )}
         </Card>
