@@ -26,7 +26,8 @@ export default function Login() {
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-5 overflow-y-auto">
       {/* Logo */}
       <div className="text-center">
-        <div className="font-display text-[2.4rem] font-black text-orange leading-tight">🏡 Familia<br />Política</div>
+        <div className="text-5xl mb-1">🧉</div>
+        <div className="font-display text-[2.4rem] font-black text-orange leading-tight">Familia<br />política</div>
         <div className="mt-2">
           <span className="inline-flex items-center gap-1.5 bg-orange-light text-orange font-bold text-sm px-3.5 py-1.5 rounded-full font-display">
             📍 Campito · 9–12 julio
