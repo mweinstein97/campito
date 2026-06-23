@@ -15,7 +15,7 @@ export default {
         text2:  '#4C4581',
         text3:  '#9D95CC',
         orange: { DEFAULT: '#4F46E5', light: '#EEF2FF' },
-        yellow: { DEFAULT: '#E879A0', light: '#FDF2F8' },
+        yellow: { DEFAULT: '#0EA5E9', light: '#E0F2FE' },
         green:  { DEFAULT: '#16A34A', light: '#DCFCE7' },
         purple: { DEFAULT: '#9333EA', light: '#F3E8FF' },
         pink:   { DEFAULT: '#EC4899', light: '#FCE7F3' },

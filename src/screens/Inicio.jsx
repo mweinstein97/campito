@@ -52,7 +52,7 @@ export default function Inicio() {
       {/* Desafíos del día */}
       {lista.length === 0 ? (
         <Card className="bg-yellow-light border-yellow">
-          <div className="inline-flex items-center gap-1 bg-yellow text-[#9D174D] text-[.68rem] font-extrabold px-2.5 py-0.5 rounded-[10px] mb-2 font-display">
+          <div className="inline-flex items-center gap-1 bg-yellow text-[#0C4A6E] text-[.68rem] font-extrabold px-2.5 py-0.5 rounded-[10px] mb-2 font-display">
             ⚡ Desafío del día
           </div>
           <div className="text-center py-3 text-text3 font-semibold text-[.875rem]">Sin desafío hoy 🌙</div>
@@ -61,7 +61,7 @@ export default function Inicio() {
         const myResp = dsf.respuestas?.[currentUser?.name]
         return (
           <Card key={dsf.id} className="bg-yellow-light border-yellow">
-            <div className="inline-flex items-center gap-1 bg-yellow text-[#9D174D] text-[.68rem] font-extrabold px-2.5 py-0.5 rounded-[10px] mb-2 font-display">
+            <div className="inline-flex items-center gap-1 bg-yellow text-[#0C4A6E] text-[.68rem] font-extrabold px-2.5 py-0.5 rounded-[10px] mb-2 font-display">
               ⚡ Desafío {lista.length > 1 ? idx + 1 : 'del día'}
             </div>
             <div className="text-[.975rem] font-bold mb-3">{dsf.pregunta}</div>
@@ -72,7 +72,7 @@ export default function Inicio() {
                   if (dsf.correcta) {
                     if (o === dsf.correcta) cls = 'bg-green-light border-green text-[#065E45]'
                     else if (o === myResp && o !== dsf.correcta) cls = 'bg-[#FFE0E0] border-[#FF6B6B] text-[#8B0000]'
-                  } else if (o === myResp) cls = 'bg-yellow border-[#EC4899] text-[#9D174D]'
+                  } else if (o === myResp) cls = 'bg-yellow border-[#38BDF8] text-[#0C4A6E]'
                 }
                 return (
                   <button
@@ -91,7 +91,7 @@ export default function Inicio() {
                 ? <div className="flex items-center gap-2 mt-2 px-2 py-1.5 bg-green/10 rounded-xl text-[.83rem] font-bold text-[#065E45]">✅ ¡Correcto! +100 pts</div>
                 : dsf.correcta
                   ? <div className="flex items-center gap-2 mt-2 px-2 py-1.5 bg-[#FFE0E0] rounded-xl text-[.8rem] font-bold text-[#8B0000]">❌ Esta no era. Correcta: {dsf.correcta}</div>
-                  : <div className="flex items-center gap-2 mt-2 px-2 py-1.5 bg-yellow/20 rounded-xl text-[.83rem] font-bold text-[#9D174D]">⏳ Respuesta guardada</div>
+                  : <div className="flex items-center gap-2 mt-2 px-2 py-1.5 bg-yellow/20 rounded-xl text-[.83rem] font-bold text-[#0C4A6E]">⏳ Respuesta guardada</div>
             )}
           </Card>
         )
