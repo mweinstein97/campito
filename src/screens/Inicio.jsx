@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApp, calcCountdown, calcRanking, todayKey } from '../context/AppContext'
 import Card from '../components/Card'
 
-export default function Inicio() {
+export default function Inicio({ onTabChange }) {
   const { state, currentUser, respDesafio, showToast } = useApp()
   const [cd, setCd] = useState(calcCountdown())
 
@@ -26,8 +26,23 @@ export default function Inicio() {
     showToast('Respuesta guardada ⚡')
   }
 
+  const hasPref = !!state.pref[currentUser?.name]
+
   return (
     <div className="flex flex-col">
+      {/* Banner preferencias incompletas */}
+      {!hasPref && (
+        <button
+          onClick={() => onTabChange?.('preparativos')}
+          className="mx-4 mt-4 bg-yellow-light border-[1.5px] border-yellow rounded-[18px] px-4 py-3 flex items-center gap-3 text-left active:opacity-80"
+        >
+          <span className="text-2xl">📋</span>
+          <div className="flex-1">
+            <div className="text-[.83rem] font-extrabold text-[#0C4A6E]">Completá tus preferencias</div>
+            <div className="text-[.72rem] text-[#0C4A6E] opacity-80 font-semibold">Nos ayuda a organizar mejor el viaje →</div>
+          </div>
+        </button>
+      )}
       {/* Countdown */}
       <div className="bg-orange rounded-[20px] mx-4 mt-4 mb-3 px-6 py-5 text-white">
         <div className="text-[.72rem] font-bold opacity-85 tracking-wider uppercase">📍 Campito · 9–12 de julio</div>

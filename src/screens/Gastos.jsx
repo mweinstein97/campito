@@ -7,7 +7,7 @@ export default function Gastos({ onBadge }) {
   const { state, currentUser, addGasto, updateGasto, deleteGasto, showToast } = useApp()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
-  const [form, setForm] = useState({ desc:'', monto:'', pagador:'' })
+  const [form, setForm] = useState({ desc:'', monto:'', pagador:'', moneda:'ARS' })
   const [parts, setParts] = useState({})
 
   const gastos = Object.values(state?.gastos || {}).sort((a, b) => (b.id || '').localeCompare(a.id || ''))
@@ -20,7 +20,7 @@ export default function Gastos({ onBadge }) {
     const allSelected = {}
     users.forEach(u => allSelected[u] = true)
     setParts(allSelected)
-    setForm({ desc:'', monto:'', pagador: currentUser.name })
+    setForm({ desc:'', monto:'', pagador: currentUser.name, moneda:'ARS' })
     setEditingId(null)
     setModalOpen(true)
   }
@@ -29,7 +29,7 @@ export default function Gastos({ onBadge }) {
     const sel = {}
     g.participantes.forEach(u => sel[u] = true)
     setParts(sel)
-    setForm({ desc: g.desc, monto: String(g.monto), pagador: g.pagador })
+    setForm({ desc: g.desc, monto: String(g.monto), pagador: g.pagador, moneda: g.moneda || 'ARS' })
     setEditingId(g.id)
     setModalOpen(true)
   }
@@ -46,7 +46,7 @@ export default function Gastos({ onBadge }) {
     if (!form.desc.trim() || !form.monto || !selectedParts.length) {
       showToast('Completá todos los campos'); return
     }
-    const item = { id: editingId || ('g' + Date.now()), desc: form.desc, monto: parseFloat(form.monto), pagador: form.pagador, participantes: selectedParts }
+    const item = { id: editingId || ('g' + Date.now()), desc: form.desc, monto: parseFloat(form.monto), moneda: form.moneda, pagador: form.pagador, participantes: selectedParts }
     if (editingId) {
       await updateGasto(item)
       showToast('Gasto actualizado ✏️')
@@ -113,7 +113,7 @@ export default function Gastos({ onBadge }) {
                   Pagó {state.users[g.pagador]?.emoji || '🙂'} {g.pagador} · {g.participantes.length} personas
                 </div>
               </div>
-              <div className="font-display text-[.975rem] font-extrabold">${g.monto.toLocaleString('es-AR')}</div>
+              <div className="font-display text-[.975rem] font-extrabold">{g.moneda === 'USD' ? 'USD ' : '$'}{g.monto.toLocaleString('es-AR')}</div>
               <button onClick={() => openEdit(g)} className="text-orange text-[.8rem] p-1">✏️</button>
               <button onClick={() => handleDelete(g.id)} className="text-text3 text-[.8rem] p-1">🗑️</button>
             </div>
@@ -125,8 +125,18 @@ export default function Gastos({ onBadge }) {
         <Field label="Descripción">
           <input className={fi} value={form.desc} onChange={e => setForm(f => ({...f, desc: e.target.value}))} placeholder="Súper, asado, combustible..." />
         </Field>
-        <Field label="Monto ($)">
-          <input className={fi} type="number" value={form.monto} onChange={e => setForm(f => ({...f, monto: e.target.value}))} placeholder="5000" />
+        <Field label="Monto">
+          <div className="flex gap-2">
+            <div className="flex border-[1.5px] border-border rounded-xl overflow-hidden text-[.83rem] font-bold flex-shrink-0">
+              {['ARS','USD'].map(m => (
+                <button key={m} onClick={() => setForm(f => ({...f, moneda: m}))}
+                  className={`px-3 py-2.5 transition-all ${form.moneda === m ? 'bg-orange text-white' : 'bg-bg text-text2'}`}>
+                  {m}
+                </button>
+              ))}
+            </div>
+            <input className={fi} type="number" value={form.monto} onChange={e => setForm(f => ({...f, monto: e.target.value}))} placeholder={form.moneda === 'USD' ? '50' : '5000'} />
+          </div>
         </Field>
         <Field label="¿Quién pagó?">
           <select className={fi} value={form.pagador} onChange={e => setForm(f => ({...f, pagador: e.target.value}))}>

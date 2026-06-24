@@ -1,7 +1,7 @@
 const TABS = [
   { id: 'inicio',        icon: '🏠', label: 'Inicio' },
   { id: 'agenda',        icon: '📅', label: 'Agenda' },
-  { id: 'preparativos',  icon: '🎒', label: 'Bolsos' },
+  { id: 'preparativos',  icon: '🎒', label: 'Previa' },
   { id: 'menus',         icon: '🍽️', label: 'Menús' },
   { id: 'gastos',        icon: '💸', label: 'Gastos' },
   { id: 'juegos',        icon: '🎮', label: 'Juegos' },

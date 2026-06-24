@@ -92,6 +92,8 @@ function reducer(state, action) {
     case 'DEL_USER':  { const u = { ...state.users }; delete u[action.name]; return { ...state, users: u } }
     case 'SET_PREF':    return { ...state, pref: { ...state.pref, [action.name]: action.pref } }
     case 'ADD_AGENDA':  return { ...state, agenda: { ...state.agenda, [action.item.id]: action.item } }
+    case 'UPD_AGENDA':  return { ...state, agenda: { ...state.agenda, [action.item.id]: action.item } }
+    case 'DEL_AGENDA':  { const a = { ...state.agenda }; delete a[action.id]; return { ...state, agenda: a } }
     case 'TOGGLE_PART': {
       const act = state.agenda[action.actId]
       const parts = act.participantes.includes(action.user)
@@ -230,6 +232,17 @@ export function AppProvider({ children }) {
         const { id, ...data } = item
         await setDoc(doc(db, 'agenda', id), data)
       }
+    },
+    async updateAgenda(item) {
+      dispatch({ type: 'UPD_AGENDA', item })
+      if (db) {
+        const { id, ...data } = item
+        await setDoc(doc(db, 'agenda', id), data)
+      }
+    },
+    async deleteAgenda(id) {
+      dispatch({ type: 'DEL_AGENDA', id })
+      if (db) await deleteDoc(doc(db, 'agenda', id))
     },
     async togglePart(actId, user) {
       dispatch({ type: 'TOGGLE_PART', actId, user })

@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import { EMOJIS } from '../lib/seed'
 import Modal from './Modal'
 
-const TITLES = { inicio: 'Inicio', agenda: 'Agenda', preparativos: 'Preparativos', gastos: 'Gastos', juegos: 'Juegos' }
+const TITLES = { inicio: 'Inicio', agenda: 'Agenda', preparativos: 'Previa', menus: 'Menús', gastos: 'Gastos', juegos: 'Juegos' }
 
 export default function Header({ tab, onAdminClick }) {
   const { currentUser, changeEmoji, changeName, showToast } = useApp()

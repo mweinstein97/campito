@@ -6,8 +6,9 @@ import Modal from '../components/Modal'
 const DIAS = ['Mié 9','Jue 10','Vie 11','Sáb 12']
 
 export default function Agenda({ onBadge }) {
-  const { state, currentUser, addAgenda, togglePart, showToast } = useApp()
+  const { state, currentUser, addAgenda, updateAgenda, deleteAgenda, togglePart, showToast } = useApp()
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState({ nombre:'', dia: DIAS[0], hora:'', descripcion:'' })
 
   const allActs = Object.values(state?.agenda || {})
@@ -23,18 +24,37 @@ export default function Agenda({ onBadge }) {
   })).filter(g => g.acts.length > 0)
   const totalActs = allActs.length
 
-  async function handleCreate() {
+  function openNew() {
+    setEditingId(null)
+    setForm({ nombre:'', dia: DIAS[0], hora:'', descripcion:'' })
+    setModalOpen(true)
+  }
+
+  function openEdit(act) {
+    setEditingId(act.id)
+    setForm({ nombre: act.nombre, dia: act.dia, hora: act.hora === '?' ? '' : act.hora, descripcion: act.descripcion || '' })
+    setModalOpen(true)
+  }
+
+  async function handleSave() {
     if (!form.nombre.trim()) { showToast('Escribí el nombre'); return }
-    const id = 'a' + Date.now()
-    await addAgenda({
-      id, nombre: form.nombre, dia: form.dia,
-      hora: form.hora || '?', descripcion: form.descripcion,
-      creador: currentUser.name, participantes: [currentUser.name],
-    })
+    if (editingId) {
+      const existing = state.agenda[editingId]
+      await updateAgenda({ ...existing, nombre: form.nombre, dia: form.dia, hora: form.hora || '?', descripcion: form.descripcion })
+      showToast('Actividad actualizada ✅')
+    } else {
+      const id = 'a' + Date.now()
+      await addAgenda({ id, nombre: form.nombre, dia: form.dia, hora: form.hora || '?', descripcion: form.descripcion, creador: currentUser.name, participantes: [currentUser.name] })
+      showToast('¡Actividad creada! 🎉')
+      onBadge?.()
+    }
     setForm({ nombre:'', dia: DIAS[0], hora:'', descripcion:'' })
     setModalOpen(false)
-    showToast('¡Actividad creada! 🎉')
-    onBadge?.()
+  }
+
+  async function handleDelete(id) {
+    await deleteAgenda(id)
+    showToast('Actividad eliminada')
   }
 
   return (
@@ -42,7 +62,7 @@ export default function Agenda({ onBadge }) {
       <div className="flex items-center justify-between px-4 py-2">
         <span className="text-[.83rem] text-text2 font-semibold">{totalActs} actividades</span>
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={openNew}
           className="bg-orange text-white rounded-xl px-3.5 py-1.5 text-[.78rem] font-bold active:opacity-85"
         >
           + Nueva
@@ -59,12 +79,12 @@ export default function Agenda({ onBadge }) {
           <div className="px-4 pt-3 pb-1">
             <span className="text-[.72rem] font-extrabold text-text3 uppercase tracking-widest font-display">{dia}</span>
           </div>
-          {acts.map(a => <ActCard key={a.id} act={a} currentUser={currentUser} onToggle={togglePart} />)}
+          {acts.map(a => <ActCard key={a.id} act={a} currentUser={currentUser} onToggle={togglePart} onEdit={openEdit} onDelete={handleDelete} />)}
         </div>
       ))}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <h2 className="font-display font-black text-[1.15rem] mb-3.5">Nueva actividad</h2>
+        <h2 className="font-display font-black text-[1.15rem] mb-3.5">{editingId ? 'Editar actividad' : 'Nueva actividad'}</h2>
         <Field label="Nombre">
           <input className={fi} value={form.nombre} onChange={e => setForm(f => ({...f, nombre: e.target.value}))} placeholder="Running, Truco, Pool..." />
         </Field>
@@ -81,16 +101,17 @@ export default function Agenda({ onBadge }) {
         <Field label="Descripción (opcional)">
           <textarea className={fi} rows={2} style={{ resize:'none' }} value={form.descripcion} onChange={e => setForm(f => ({...f, descripcion: e.target.value}))} />
         </Field>
-        <button onClick={handleCreate} className="w-full bg-orange text-white rounded-xl py-3 font-bold text-[.9rem] active:opacity-85">
-          Crear actividad
+        <button onClick={handleSave} className="w-full bg-orange text-white rounded-xl py-3 font-bold text-[.9rem] active:opacity-85">
+          {editingId ? 'Guardar cambios' : 'Crear actividad'}
         </button>
       </Modal>
     </div>
   )
 }
 
-function ActCard({ act, currentUser, onToggle }) {
+function ActCard({ act, currentUser, onToggle, onEdit, onDelete }) {
   const joined = act.participantes.includes(currentUser?.name)
+  const isCreator = act.creador === currentUser?.name
 
   return (
     <Card>
@@ -100,13 +121,21 @@ function ActCard({ act, currentUser, onToggle }) {
           <div className="text-[.75rem] text-text2 mt-0.5 font-semibold">📅 {act.dia} · ⏰ {act.hora} · por {act.creador}</div>
           {act.descripcion && <div className="text-[.78rem] text-text2 mt-0.5">{act.descripcion}</div>}
         </div>
-        <button
-          onClick={() => onToggle(act.id, currentUser.name)}
-          className={`rounded-[10px] px-3.5 py-1.5 text-[.78rem] font-extrabold transition-all active:scale-95 whitespace-nowrap flex-shrink-0
-            ${joined ? 'bg-green-light text-[#065E45]' : 'bg-orange-light text-orange'}`}
-        >
-          {joined ? '✓ Voy' : '+ Me sumo'}
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {isCreator && (
+            <>
+              <button onClick={() => onEdit(act)} className="text-orange text-[.8rem] p-1">✏️</button>
+              <button onClick={() => onDelete(act.id)} className="text-text3 text-[.8rem] p-1">🗑️</button>
+            </>
+          )}
+          <button
+            onClick={() => onToggle(act.id, currentUser.name)}
+            className={`rounded-[10px] px-3.5 py-1.5 text-[.78rem] font-extrabold transition-all active:scale-95 whitespace-nowrap
+              ${joined ? 'bg-green-light text-[#065E45]' : 'bg-orange-light text-orange'}`}
+          >
+            {joined ? '✓ Voy' : '+ Me sumo'}
+          </button>
+        </div>
       </div>
       {act.participantes.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-1">

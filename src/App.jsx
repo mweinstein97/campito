@@ -44,7 +44,7 @@ function Shell() {
     <>
       <Header tab={tab} onAdminClick={() => setAdminOpen(true)} />
       <div className="scroll-area flex-1">
-        {tab === 'inicio'       && <Inicio />}
+        {tab === 'inicio'       && <Inicio onTabChange={handleTabChange} />}
         {tab === 'agenda'       && <Agenda onBadge={() => addBadge('agenda')} />}
         {tab === 'preparativos' && <Preparativos />}
         {tab === 'gastos'       && <Gastos onBadge={() => addBadge('gastos')} />}
