@@ -242,20 +242,21 @@ function Autos() {
   const autos = Object.values(state?.autos || {})
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState(null)
-  const [form, setForm] = useState({ origen: '', hora: '', cupos: '4' })
+  const DIAS = ['Jue 9', 'Vie 10', 'Sáb 11', 'Dom 12']
+  const [form, setForm] = useState({ origen: '', hora: '', cupos: '4', dia: 'Jue 9' })
 
-  function openNew() { setForm({ origen: '', hora: '', cupos: '4' }); setEditId(null); setShowForm(true) }
-  function openEdit(a) { setForm({ origen: a.origen, hora: a.hora, cupos: String(a.cupos) }); setEditId(a.id); setShowForm(true) }
+  function openNew() { setForm({ origen: '', hora: '', cupos: '4', dia: 'Jue 9' }); setEditId(null); setShowForm(true) }
+  function openEdit(a) { setForm({ origen: a.origen, hora: a.hora, cupos: String(a.cupos), dia: a.dia || 'Jue 9' }); setEditId(a.id); setShowForm(true) }
 
   async function handleSave() {
     if (!form.origen.trim()) { showToast('Indicá desde dónde salís'); return }
     const cupos = Math.min(4, Math.max(1, parseInt(form.cupos) || 4))
     if (editId) {
       const existing = state.autos[editId]
-      await updateAuto({ ...existing, origen: form.origen.trim(), hora: form.hora, cupos })
+      await updateAuto({ ...existing, origen: form.origen.trim(), hora: form.hora, cupos, dia: form.dia })
       showToast('Auto actualizado ✅')
     } else {
-      await addAuto({ id: 'car' + Date.now(), conductor: currentUser.name, origen: form.origen.trim(), hora: form.hora, cupos, pasajeros: [] })
+      await addAuto({ id: 'car' + Date.now(), conductor: currentUser.name, origen: form.origen.trim(), hora: form.hora, cupos, dia: form.dia, pasajeros: [] })
       showToast('¡Auto ofrecido! 🚗')
     }
     setShowForm(false)
@@ -289,7 +290,7 @@ function Autos() {
                   </span>
                 </div>
                 <div className="text-[.78rem] text-text2 font-semibold">
-                  📍 {a.origen}{a.hora ? ` · ⏰ ${a.hora}` : ''}
+                  📅 {a.dia || ''} · 📍 {a.origen}{a.hora ? ` · ⏰ ${a.hora}` : ''}
                 </div>
                 {pasajeros.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
@@ -339,13 +340,19 @@ function Autos() {
           </div>
           <div className="grid grid-cols-2 gap-2.5 mb-2.5">
             <div>
+              <label className="block text-[.75rem] font-bold text-text2 mb-0.5 uppercase tracking-wide">Día</label>
+              <select className={fi} value={form.dia} onChange={e => setForm(f => ({...f, dia: e.target.value}))}>
+                {DIAS.map(d => <option key={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
               <label className="block text-[.75rem] font-bold text-text2 mb-0.5 uppercase tracking-wide">Hora de salida</label>
               <input className={fi} value={form.hora} onChange={e => setForm(f => ({...f, hora: e.target.value}))} placeholder="08:00" />
             </div>
-            <div>
-              <label className="block text-[.75rem] font-bold text-text2 mb-0.5 uppercase tracking-wide">Cupos (máx 4)</label>
-              <input className={fi} type="number" min="1" max="4" value={form.cupos} onChange={e => setForm(f => ({...f, cupos: e.target.value}))} />
-            </div>
+          </div>
+          <div className="mb-2.5">
+            <label className="block text-[.75rem] font-bold text-text2 mb-0.5 uppercase tracking-wide">Cupos (máx 4)</label>
+            <input className={fi} type="number" min="1" max="4" value={form.cupos} onChange={e => setForm(f => ({...f, cupos: e.target.value}))} />
           </div>
           <div className="flex gap-2">
             <button onClick={() => setShowForm(false)} className="flex-1 border-[1.5px] border-border text-text2 rounded-xl py-2.5 text-[.875rem] font-bold">Cancelar</button>
