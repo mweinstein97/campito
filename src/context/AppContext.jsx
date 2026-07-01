@@ -111,6 +111,8 @@ function reducer(state, action) {
       return { ...state, check: { ...state.check, [action.id]: { ...it, portadores: (it.portadores || []).filter(p => p !== action.user) } } }
     }
     case 'ADD_CHECK':   return { ...state, check: { ...state.check, [action.item.id]: action.item } }
+    case 'UPD_CHECK':   return { ...state, check: { ...state.check, [action.id]: { ...state.check[action.id], item: action.label } } }
+    case 'DEL_CHECK':   { const c = { ...state.check }; delete c[action.id]; return { ...state, check: c } }
     case 'ADD_GASTO':   return { ...state, gastos: { ...state.gastos, [action.item.id]: action.item } }
     case 'EDIT_GASTO':  return { ...state, gastos: { ...state.gastos, [action.item.id]: action.item } }
     case 'DEL_GASTO':  { const g = { ...state.gastos }; delete g[action.id]; return { ...state, gastos: g } }
@@ -268,6 +270,14 @@ export function AppProvider({ children }) {
     async addCheckItem(item) {
       dispatch({ type: 'ADD_CHECK', item })
       if (db) await setDoc(doc(db, 'checklist', item.id), { item: item.item, portadores: [] })
+    },
+    async updateCheckItem(id, label) {
+      dispatch({ type: 'UPD_CHECK', id, label })
+      if (db) await updateDoc(doc(db, 'checklist', id), { item: label })
+    },
+    async deleteCheckItem(id) {
+      dispatch({ type: 'DEL_CHECK', id })
+      if (db) await deleteDoc(doc(db, 'checklist', id))
     },
 
     async addGasto(item) {

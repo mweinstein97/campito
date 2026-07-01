@@ -98,8 +98,10 @@ function Gastro() {
 }
 
 function Checklist() {
-  const { state, currentUser, takeItem, releaseItem, addCheckItem, showToast } = useApp()
+  const { state, currentUser, takeItem, releaseItem, addCheckItem, updateCheckItem, deleteCheckItem, showToast } = useApp()
   const newItemRef = useRef()
+  const [editId, setEditId] = useState(null)
+  const [editVal, setEditVal] = useState('')
   const items = Object.entries(state?.check || {})
   const covered = items.filter(([, v]) => (v.portadores || []).length > 0).length
 
@@ -120,6 +122,12 @@ function Checklist() {
     showToast('Elemento agregado ✅')
   }
 
+  async function handleUpdate(id) {
+    if (!editVal.trim()) return
+    await updateCheckItem(id, editVal.trim())
+    setEditId(null)
+  }
+
   return (
     <>
       <Card>
@@ -135,26 +143,44 @@ function Checklist() {
           const covered = portadores.length > 0
 
           return (
-            <div key={id} className="flex items-center gap-2.5 py-2 border-b border-border last:border-b-0">
-              <span className="text-[.975rem]">{covered ? '✅' : '⬜'}</span>
-              <div className="flex-1 min-w-0">
-                <span className={`text-[.875rem] font-semibold ${covered ? 'text-text3 line-through' : ''}`}>{v.item}</span>
-                {portadores.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-0.5">
-                    {portadores.map(p => (
-                      <span key={p} className="text-[.68rem] text-[#065E45] font-bold bg-green-light px-1.5 py-0.5 rounded-full">{p}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {iMine ? (
-                <button onClick={() => handleRelease(id)} className="bg-[#FFE0E0] text-[#8B0000] rounded-lg px-3 py-1 text-[.73rem] font-extrabold whitespace-nowrap">
-                  Suelto
-                </button>
+            <div key={id} className="py-2 border-b border-border last:border-b-0">
+              {editId === id ? (
+                <div className="flex gap-2">
+                  <input
+                    className={fi + ' flex-1'}
+                    value={editVal}
+                    onChange={e => setEditVal(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleUpdate(id)}
+                    autoFocus
+                  />
+                  <button onClick={() => handleUpdate(id)} className="bg-orange text-white rounded-xl px-3 text-[.8rem] font-bold">✓</button>
+                  <button onClick={() => setEditId(null)} className="border-[1.5px] border-border rounded-xl px-3 text-[.8rem] font-bold text-text3">✕</button>
+                </div>
               ) : (
-                <button onClick={() => handleTake(id)} className="bg-green-light text-[#065E45] rounded-lg px-3 py-1 text-[.73rem] font-extrabold whitespace-nowrap">
-                  Lo llevo
-                </button>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-[.975rem]">{covered ? '✅' : '⬜'}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-[.875rem] font-semibold ${covered ? 'text-text3 line-through' : ''}`}>{v.item}</span>
+                    {portadores.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {portadores.map(p => (
+                          <span key={p} className="text-[.68rem] text-[#065E45] font-bold bg-green-light px-1.5 py-0.5 rounded-full">{p}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => { setEditId(id); setEditVal(v.item) }} className="text-text3 text-[.8rem] p-1">✏️</button>
+                  <button onClick={() => deleteCheckItem(id)} className="text-text3 text-[.8rem] p-1">🗑️</button>
+                  {iMine ? (
+                    <button onClick={() => handleRelease(id)} className="bg-[#FFE0E0] text-[#8B0000] rounded-lg px-3 py-1 text-[.73rem] font-extrabold whitespace-nowrap">
+                      Suelto
+                    </button>
+                  ) : (
+                    <button onClick={() => handleTake(id)} className="bg-green-light text-[#065E45] rounded-lg px-3 py-1 text-[.73rem] font-extrabold whitespace-nowrap">
+                      Lo llevo
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )
