@@ -113,6 +113,9 @@ function reducer(state, action) {
     case 'ADD_CHECK':   return { ...state, check: { ...state.check, [action.item.id]: action.item } }
     case 'UPD_CHECK':   return { ...state, check: { ...state.check, [action.id]: { ...state.check[action.id], item: action.label } } }
     case 'DEL_CHECK':   { const c = { ...state.check }; delete c[action.id]; return { ...state, check: c } }
+    case 'ADD_AUTO':    return { ...state, autos: { ...state.autos, [action.item.id]: action.item } }
+    case 'UPD_AUTO':    return { ...state, autos: { ...state.autos, [action.item.id]: action.item } }
+    case 'DEL_AUTO':    { const a = { ...state.autos }; delete a[action.id]; return { ...state, autos: a } }
     case 'ADD_GASTO':   return { ...state, gastos: { ...state.gastos, [action.item.id]: action.item } }
     case 'EDIT_GASTO':  return { ...state, gastos: { ...state.gastos, [action.item.id]: action.item } }
     case 'DEL_GASTO':  { const g = { ...state.gastos }; delete g[action.id]; return { ...state, gastos: g } }
@@ -271,6 +274,31 @@ export function AppProvider({ children }) {
       dispatch({ type: 'ADD_CHECK', item })
       if (db) await setDoc(doc(db, 'checklist', item.id), { item: item.item, portadores: [] })
     },
+    async addAuto(item) {
+      dispatch({ type: 'ADD_AUTO', item })
+      if (db) { const { id, ...data } = item; await setDoc(doc(db, 'autos', id), data) }
+    },
+    async updateAuto(item) {
+      dispatch({ type: 'UPD_AUTO', item })
+      if (db) { const { id, ...data } = item; await setDoc(doc(db, 'autos', id), data) }
+    },
+    async deleteAuto(id) {
+      dispatch({ type: 'DEL_AUTO', id })
+      if (db) await deleteDoc(doc(db, 'autos', id))
+    },
+    async joinAuto(id, user) {
+      const auto = stateRef.current.autos[id]
+      const updated = { ...auto, pasajeros: [...(auto.pasajeros || []), user] }
+      dispatch({ type: 'UPD_AUTO', item: updated })
+      if (db) await updateDoc(doc(db, 'autos', id), { pasajeros: arrayUnion(user) })
+    },
+    async leaveAuto(id, user) {
+      const auto = stateRef.current.autos[id]
+      const updated = { ...auto, pasajeros: (auto.pasajeros || []).filter(p => p !== user) }
+      dispatch({ type: 'UPD_AUTO', item: updated })
+      if (db) await updateDoc(doc(db, 'autos', id), { pasajeros: arrayRemove(user) })
+    },
+
     async updateCheckItem(id, label) {
       dispatch({ type: 'UPD_CHECK', id, label })
       if (db) await updateDoc(doc(db, 'checklist', id), { item: label })
@@ -453,6 +481,12 @@ function setupListeners(dispatch) {
     dispatch({ type: 'MERGE', key: 'responsables', data: snap.exists() ? snap.data() : {} })
   }))
 
+  unsubs.push(onSnapshot(collection(db, 'autos'), snap => {
+    const autos = {}
+    snap.forEach(d => autos[d.id] = { id: d.id, ...d.data() })
+    dispatch({ type: 'MERGE', key: 'autos', data: autos })
+  }))
+
   unsubs.push(onSnapshot(collection(db, 'menus'), snap => {
     const menus = {}
     snap.forEach(d => menus[d.id] = d.data())
@@ -472,7 +506,7 @@ function setupListeners(dispatch) {
 
 function emptyState() {
   return {
-    users: {}, agenda: {}, pref: {}, check: {}, gastos: {}, desafios: {}, menus: {}, compras: {}, responsables: {},
+    users: {}, agenda: {}, pref: {}, check: {}, gastos: {}, desafios: {}, menus: {}, compras: {}, responsables: {}, autos: {},
     prode: { pregs: [], resp: {}, correct: {}, closed: false },
   }
 }

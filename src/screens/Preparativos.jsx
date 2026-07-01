@@ -3,8 +3,9 @@ import { useApp } from '../context/AppContext'
 import Card from '../components/Card'
 
 const TABS = [
-  { id:'gastro', label:'🍽 Gastronómico' },
-  { id:'check',  label:'✅ Checklist' },
+  { id:'gastro',  label:'🍽 Gastronómico' },
+  { id:'check',   label:'✅ Checklist' },
+  { id:'autos',   label:'🚗 Autos' },
   { id:'resumen', label:'📋 Resumen' },
 ]
 
@@ -27,6 +28,7 @@ export default function Preparativos() {
       </div>
       {tab === 'gastro'  && <Gastro />}
       {tab === 'check'   && <Checklist />}
+      {tab === 'autos'   && <Autos />}
       {tab === 'resumen' && <Resumen />}
     </div>
   )
@@ -231,6 +233,134 @@ function Resumen() {
           </Card>
         )
       })}
+    </>
+  )
+}
+
+function Autos() {
+  const { state, currentUser, addAuto, updateAuto, deleteAuto, joinAuto, leaveAuto, showToast } = useApp()
+  const autos = Object.values(state?.autos || {})
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [form, setForm] = useState({ origen: '', hora: '', cupos: '4' })
+
+  function openNew() { setForm({ origen: '', hora: '', cupos: '4' }); setEditId(null); setShowForm(true) }
+  function openEdit(a) { setForm({ origen: a.origen, hora: a.hora, cupos: String(a.cupos) }); setEditId(a.id); setShowForm(true) }
+
+  async function handleSave() {
+    if (!form.origen.trim()) { showToast('Indicá desde dónde salís'); return }
+    const cupos = Math.min(4, Math.max(1, parseInt(form.cupos) || 4))
+    if (editId) {
+      const existing = state.autos[editId]
+      await updateAuto({ ...existing, origen: form.origen.trim(), hora: form.hora, cupos })
+      showToast('Auto actualizado ✅')
+    } else {
+      await addAuto({ id: 'car' + Date.now(), conductor: currentUser.name, origen: form.origen.trim(), hora: form.hora, cupos, pasajeros: [] })
+      showToast('¡Auto ofrecido! 🚗')
+    }
+    setShowForm(false)
+  }
+
+  return (
+    <>
+      {autos.length === 0 && !showForm && (
+        <div className="text-center py-10 text-text3">
+          <div className="text-4xl mb-2">🚗</div>
+          <p className="text-[.875rem] font-semibold">Nadie ofreció auto aún</p>
+        </div>
+      )}
+
+      {autos.map(a => {
+        const pasajeros = a.pasajeros || []
+        const libres = a.cupos - pasajeros.length
+        const isConductor = a.conductor === currentUser?.name
+        const isPasajero = pasajeros.includes(currentUser?.name)
+        const lleno = libres <= 0 && !isPasajero
+
+        return (
+          <Card key={a.id}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-lg">{state.users[a.conductor]?.emoji || '🙂'}</span>
+                  <span className="font-display font-extrabold text-[.975rem]">{a.conductor}</span>
+                  <span className={`text-[.68rem] font-extrabold px-2 py-0.5 rounded-full ${libres > 0 ? 'bg-green-light text-[#065E45]' : 'bg-[#FFE0E0] text-[#8B0000]'}`}>
+                    {libres > 0 ? `${libres} lugar${libres > 1 ? 'es' : ''}` : 'Lleno'}
+                  </span>
+                </div>
+                <div className="text-[.78rem] text-text2 font-semibold">
+                  📍 {a.origen}{a.hora ? ` · ⏰ ${a.hora}` : ''}
+                </div>
+                {pasajeros.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {pasajeros.map(p => (
+                      <span key={p} className="text-[.68rem] font-bold bg-orange-light text-orange px-2 py-0.5 rounded-full">
+                        {state.users[p]?.emoji} {p}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {isConductor && (
+                  <>
+                    <button onClick={() => openEdit(a)} className="text-orange text-[.8rem] p-1">✏️</button>
+                    <button onClick={() => deleteAuto(a.id)} className="text-text3 text-[.8rem] p-1">🗑️</button>
+                  </>
+                )}
+                {!isConductor && (
+                  isPasajero ? (
+                    <button onClick={() => leaveAuto(a.id, currentUser.name)} className="bg-[#FFE0E0] text-[#8B0000] rounded-lg px-3 py-1.5 text-[.73rem] font-extrabold whitespace-nowrap">
+                      Me bajo
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { if (!lleno) joinAuto(a.id, currentUser.name) }}
+                      disabled={lleno}
+                      className={`rounded-lg px-3 py-1.5 text-[.73rem] font-extrabold whitespace-nowrap transition-all
+                        ${lleno ? 'bg-bg text-text3 cursor-default' : 'bg-orange-light text-orange active:opacity-75'}`}
+                    >
+                      Me sumo
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </Card>
+        )
+      })}
+
+      {showForm ? (
+        <Card>
+          <h3 className="font-display font-extrabold text-[.975rem] mb-3">{editId ? 'Editar auto' : 'Ofrecer auto'}</h3>
+          <div className="mb-2.5">
+            <label className="block text-[.75rem] font-bold text-text2 mb-0.5 uppercase tracking-wide">Desde dónde salís</label>
+            <input className={fi} value={form.origen} onChange={e => setForm(f => ({...f, origen: e.target.value}))} placeholder="Palermo, Belgrano..." />
+          </div>
+          <div className="grid grid-cols-2 gap-2.5 mb-2.5">
+            <div>
+              <label className="block text-[.75rem] font-bold text-text2 mb-0.5 uppercase tracking-wide">Hora de salida</label>
+              <input className={fi} value={form.hora} onChange={e => setForm(f => ({...f, hora: e.target.value}))} placeholder="08:00" />
+            </div>
+            <div>
+              <label className="block text-[.75rem] font-bold text-text2 mb-0.5 uppercase tracking-wide">Cupos (máx 4)</label>
+              <input className={fi} type="number" min="1" max="4" value={form.cupos} onChange={e => setForm(f => ({...f, cupos: e.target.value}))} />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setShowForm(false)} className="flex-1 border-[1.5px] border-border text-text2 rounded-xl py-2.5 text-[.875rem] font-bold">Cancelar</button>
+            <button onClick={handleSave} className="flex-1 bg-orange text-white rounded-xl py-2.5 text-[.875rem] font-bold">{editId ? 'Guardar' : 'Ofrecer'}</button>
+          </div>
+        </Card>
+      ) : (
+        !autos.some(a => a.conductor === currentUser?.name) && (
+          <div className="px-4 pb-2">
+            <button onClick={openNew} className="w-full bg-orange text-white rounded-xl py-3 font-bold text-[.875rem] active:opacity-85">
+              🚗 Ofrecer mi auto
+            </button>
+          </div>
+        )
+      )}
     </>
   )
 }
