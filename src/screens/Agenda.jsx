@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import Card from '../components/Card'
 import Modal from '../components/Modal'
 
-const DIAS = ['Mié 9','Jue 10','Vie 11','Sáb 12']
+const DIAS = ['Jue 9','Vie 10','Sáb 11','Dom 12']
 
 export default function Agenda({ onBadge }) {
   const { state, currentUser, addAgenda, updateAgenda, deleteAgenda, togglePart, showToast } = useApp()
