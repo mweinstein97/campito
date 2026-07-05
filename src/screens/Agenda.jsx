@@ -12,16 +12,23 @@ export default function Agenda({ onBadge }) {
   const [form, setForm] = useState({ nombre:'', dia: DIAS[0], hora:'', descripcion:'' })
 
   const allActs = Object.values(state?.agenda || {})
-  const grouped = DIAS.map(dia => ({
-    dia,
-    acts: allActs
-      .filter(a => a.dia === dia)
-      .sort((a, b) => {
-        if (!a.hora || a.hora === '?') return 1
-        if (!b.hora || b.hora === '?') return -1
-        return a.hora.localeCompare(b.hora)
-      }),
-  })).filter(g => g.acts.length > 0)
+  const sortActs = acts => acts.sort((a, b) => {
+    if (!a.hora || a.hora === '?') return 1
+    if (!b.hora || b.hora === '?') return -1
+    return a.hora.localeCompare(b.hora)
+  })
+  // Agrupar por día real; ordenar grupos según DIAS (nuevo orden), los no reconocidos al final
+  const byDia = {}
+  allActs.forEach(a => { if (!byDia[a.dia]) byDia[a.dia] = []; byDia[a.dia].push(a) })
+  const grouped = Object.keys(byDia)
+    .sort((a, b) => {
+      const ia = DIAS.indexOf(a), ib = DIAS.indexOf(b)
+      if (ia === -1 && ib === -1) return a.localeCompare(b)
+      if (ia === -1) return 1
+      if (ib === -1) return -1
+      return ia - ib
+    })
+    .map(dia => ({ dia, acts: sortActs(byDia[dia]) }))
   const totalActs = allActs.length
 
   function openNew() {
