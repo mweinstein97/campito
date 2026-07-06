@@ -415,7 +415,7 @@ async function seedFirestoreIfEmpty() {
   const batch = writeBatch(db)
   batch.set(doc(db, 'meta', 'seeded'), { at: new Date().toISOString() })
   VIAJEROS.forEach(([name, emoji]) => {
-    batch.set(doc(db, 'users', name), { emoji })
+    batch.set(doc(db, 'users', name), { emoji }, { merge: true })
   })
   CHECKLIST_INICIAL.forEach((item, i) => {
     batch.set(doc(db, 'checklist', `c${i + 1}`), { item, portadores: [] })
