@@ -405,6 +405,13 @@ async function seedFirestoreIfEmpty() {
   const metaSnap = await getDocs(collection(db, 'meta'))
   if (!metaSnap.empty) return
 
+  // Si ya hay usuarios (seed corrió antes del flag), solo guardar la marca
+  const usersSnap = await getDocs(collection(db, 'users'))
+  if (!usersSnap.empty) {
+    await setDoc(doc(db, 'meta', 'seeded'), { at: new Date().toISOString() })
+    return
+  }
+
   const batch = writeBatch(db)
   batch.set(doc(db, 'meta', 'seeded'), { at: new Date().toISOString() })
   VIAJEROS.forEach(([name, emoji]) => {
