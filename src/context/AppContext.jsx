@@ -434,9 +434,13 @@ function setupListeners(dispatch) {
     dispatch({ type: 'MERGE', key: 'users', data: users })
   }))
 
+  const DIA_MAP = { 'Mié 9':'Jue 9', 'Jue 10':'Vie 10', 'Vie 11':'Sáb 11', 'Sáb 12':'Dom 12' }
   unsubs.push(onSnapshot(collection(db, 'agenda'), snap => {
     const agenda = {}
-    snap.forEach(d => agenda[d.id] = { id: d.id, ...d.data() })
+    snap.forEach(d => {
+      const data = d.data()
+      agenda[d.id] = { id: d.id, ...data, dia: DIA_MAP[data.dia] || data.dia }
+    })
     dispatch({ type: 'MERGE', key: 'agenda', data: agenda })
   }))
 
