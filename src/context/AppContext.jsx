@@ -402,10 +402,11 @@ export const useApp = () => useContext(AppCtx)
 
 // ─── Firestore first-run seed ────────────────────────────────────────────────
 async function seedFirestoreIfEmpty() {
-  const snap = await getDocs(collection(db, 'users'))
-  if (!snap.empty) return
+  const metaSnap = await getDocs(collection(db, 'meta'))
+  if (!metaSnap.empty) return
 
   const batch = writeBatch(db)
+  batch.set(doc(db, 'meta', 'seeded'), { at: new Date().toISOString() })
   VIAJEROS.forEach(([name, emoji]) => {
     batch.set(doc(db, 'users', name), { emoji })
   })
