@@ -163,9 +163,11 @@ export default function Gastos({ onBadge }) {
             ))}
           </div>
         </Field>
-        <button onClick={handleSave} className="w-full bg-orange text-white rounded-xl py-3 font-bold text-[.9rem] mt-2 active:opacity-85">
-          {editingId ? 'Guardar cambios' : 'Guardar gasto'}
-        </button>
+        <div className="sticky bottom-0 bg-card pt-2 -mx-6 px-6 pb-1">
+          <button onClick={handleSave} className="w-full bg-orange text-white rounded-xl py-3 font-bold text-[.9rem] active:opacity-85">
+            {editingId ? 'Guardar cambios' : 'Guardar gasto'}
+          </button>
+        </div>
       </Modal>
     </div>
   )

@@ -108,9 +108,11 @@ export default function Agenda({ onBadge }) {
         <Field label="Descripción (opcional)">
           <textarea className={fi} rows={2} style={{ resize:'none' }} value={form.descripcion} onChange={e => setForm(f => ({...f, descripcion: e.target.value}))} />
         </Field>
-        <button onClick={handleSave} className="w-full bg-orange text-white rounded-xl py-3 font-bold text-[.9rem] active:opacity-85">
-          {editingId ? 'Guardar cambios' : 'Crear actividad'}
-        </button>
+        <div className="sticky bottom-0 bg-card pt-2 -mx-6 px-6 pb-1">
+          <button onClick={handleSave} className="w-full bg-orange text-white rounded-xl py-3 font-bold text-[.9rem] active:opacity-85">
+            {editingId ? 'Guardar cambios' : 'Crear actividad'}
+          </button>
+        </div>
       </Modal>
     </div>
   )
