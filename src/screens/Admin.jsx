@@ -6,7 +6,7 @@ const ADMIN_PWD = 'campito2025'
 export default function Admin({ onClose }) {
   const [authed, setAuthed] = useState(false)
   const [pwd, setPwd] = useState('')
-  const { state, currentUser, showToast, deleteUser, addDesafio, updateDesafio, deleteDesafio, addProdeQ, closeProde } = useApp()
+  const { state, currentUser, showToast, deleteUser, setUserNoches, addDesafio, updateDesafio, deleteDesafio, addProdeQ, closeProde } = useApp()
 
   function handleLogin() {
     if (pwd === ADMIN_PWD) setAuthed(true)
@@ -32,12 +32,12 @@ export default function Admin({ onClose }) {
     )
   }
 
-  return <AdminPanel state={state} currentUser={currentUser} showToast={showToast} deleteUser={deleteUser}
+  return <AdminPanel state={state} currentUser={currentUser} showToast={showToast} deleteUser={deleteUser} setUserNoches={setUserNoches}
     addDesafio={addDesafio} updateDesafio={updateDesafio} deleteDesafio={deleteDesafio}
     addProdeQ={addProdeQ} closeProde={closeProde} onClose={onClose} />
 }
 
-function AdminPanel({ state, currentUser, showToast, deleteUser, addDesafio, updateDesafio, deleteDesafio, addProdeQ, closeProde, onClose }) {
+function AdminPanel({ state, currentUser, showToast, deleteUser, setUserNoches, addDesafio, updateDesafio, deleteDesafio, addProdeQ, closeProde, onClose }) {
   const hoy    = todayKey()
   const hoyDsf = state.desafios[hoy] || { lista: [] }
   const lista  = hoyDsf.lista || []
@@ -205,13 +205,23 @@ function AdminPanel({ state, currentUser, showToast, deleteUser, addDesafio, upd
 
       {/* Users */}
       <Section title={`Participantes (${Object.keys(state.users).length})`}>
-        {Object.keys(state.users).map(n => (
-          <div key={n} className="flex items-center py-1">
-            <span className="text-[.875rem]">{state.users[n].emoji} {n}</span>
+        <div className="text-[.72rem] text-text3 mb-2 font-semibold">Noches = cuántas noches se queda cada uno (afecta el reparto de gastos)</div>
+        {Object.keys(state.users).sort().map(n => (
+          <div key={n} className="flex items-center py-1.5 gap-2 border-b border-border last:border-0">
+            <span className="text-[.875rem] flex-1">{state.users[n].emoji} {n}</span>
+            <select
+              className="text-[.75rem] border-[1.5px] border-border rounded-lg px-1.5 py-1 bg-bg text-text1 font-bold"
+              value={state.users[n].noches ?? 3}
+              onChange={e => setUserNoches(n, Number(e.target.value))}
+            >
+              <option value={1}>1 noche</option>
+              <option value={2}>2 noches</option>
+              <option value={3}>3 noches</option>
+            </select>
             {n !== currentUser?.name && (
               <button
                 onClick={async () => { await deleteUser(n); showToast(`${n} eliminado`) }}
-                className="ml-auto text-text3 text-[.72rem] bg-none border-none cursor-pointer"
+                className="text-text3 text-[.72rem] bg-none border-none cursor-pointer"
               >
                 ✕
               </button>

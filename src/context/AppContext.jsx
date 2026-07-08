@@ -48,11 +48,14 @@ export function calcRanking(state) {
   return Object.entries(pts).sort((a, b) => b[1] - a[1])
 }
 
-export function calcDeudas(gastos) {
+export function calcDeudas(gastos, users = {}) {
   const bal = {}
   Object.values(gastos).forEach(g => {
-    const share = g.monto / g.participantes.length
-    g.participantes.forEach(p => bal[p] = (bal[p] || 0) - share)
+    const totalNoches = g.participantes.reduce((s, p) => s + (users[p]?.noches ?? 3), 0)
+    g.participantes.forEach(p => {
+      const share = totalNoches > 0 ? g.monto * ((users[p]?.noches ?? 3) / totalNoches) : g.monto / g.participantes.length
+      bal[p] = (bal[p] || 0) - share
+    })
     bal[g.pagador] = (bal[g.pagador] || 0) + g.monto
   })
   const creds = [], debts = []
@@ -74,10 +77,13 @@ export function calcDeudas(gastos) {
   return txs
 }
 
-export function calcMyBalance(gastos, userName) {
+export function calcMyBalance(gastos, userName, users = {}) {
   let b = 0
   Object.values(gastos).forEach(g => {
-    if (g.participantes.includes(userName)) b -= g.monto / g.participantes.length
+    if (g.participantes.includes(userName)) {
+      const totalNoches = g.participantes.reduce((s, p) => s + (users[p]?.noches ?? 3), 0)
+      b -= totalNoches > 0 ? g.monto * ((users[userName]?.noches ?? 3) / totalNoches) : g.monto / g.participantes.length
+    }
     if (g.pagador === userName) b += g.monto
   })
   return Math.round(b)
@@ -88,7 +94,7 @@ function reducer(state, action) {
   switch (action.type) {
     case 'LOAD':   return { ...action.payload }
     case 'MERGE':  return { ...state, [action.key]: action.data }
-    case 'SET_USER':    return { ...state, users: { ...state.users, [action.name]: { emoji: action.emoji } } }
+    case 'SET_USER':    return { ...state, users: { ...state.users, [action.name]: { ...state.users[action.name], emoji: action.emoji, ...(action.noches != null ? { noches: action.noches } : {}) } } }
     case 'DEL_USER':  { const u = { ...state.users }; delete u[action.name]; return { ...state, users: u } }
     case 'SET_PREF':    return { ...state, pref: { ...state.pref, [action.name]: action.pref } }
     case 'ADD_AGENDA':  return { ...state, agenda: { ...state.agenda, [action.item.id]: action.item } }
@@ -204,6 +210,10 @@ export function AppProvider({ children }) {
     async deleteUser(name) {
       dispatch({ type: 'DEL_USER', name })
       if (db) await deleteDoc(doc(db, 'users', name))
+    },
+    async setUserNoches(name, noches) {
+      dispatch({ type: 'SET_USER', name, emoji: state.users[name]?.emoji, noches })
+      if (db) await updateDoc(doc(db, 'users', name), { noches })
     },
     async changeEmoji(name, emoji) {
       dispatch({ type: 'SET_USER', name, emoji })
