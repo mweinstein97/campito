@@ -11,8 +11,8 @@ export default function Gastos({ onBadge }) {
   const [parts, setParts] = useState({})
 
   const gastos = Object.values(state?.gastos || {}).sort((a, b) => (b.id || '').localeCompare(a.id || ''))
-  const deudas = calcDeudas(state?.gastos || {}, state?.users || {})
-  const myBal  = calcMyBalance(state?.gastos || {}, currentUser?.name, state?.users || {})
+  const deudas = calcDeudas(state?.gastos || {})
+  const myBal  = calcMyBalance(state?.gastos || {}, currentUser?.name)
   const total  = gastos.reduce((a, g) => a + g.monto, 0)
   const users  = Object.keys(state?.users || {})
 
